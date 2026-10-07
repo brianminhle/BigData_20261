@@ -1,0 +1,12 @@
+{
+  "dataset_id": "opensky_states_2022-06-27_04",
+  "provider": "The OpenSky Network",
+  "description": "Published hourly state-vector CSV archive for 2022-06-27 04:00–05:00 UTC.",
+  "url": "https://s3.opensky-network.org/data-samples/states/2022-06-27/04/states_2022-06-27-04.csv.tar",
+  "filename": "states_2022-06-27-04.csv.tar",
+  "expected_bytes": 105400320,
+  "expected_sha256": "c85c5609320291d6cf668200ace0641f305c096d53c251ac498c54052b202d59",
+  "documentation_url": "https://opensky-network.org/data/scientific",
+  "schema_url": "https://s3.opensky-network.org/data-samples/states/README.txt",
+  "terms_url": "https://s3.opensky-network.org/data-samples/states/LICENSE.txt"
+}

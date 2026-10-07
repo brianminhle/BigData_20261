@@ -1,0 +1,122 @@
+{
+  "distinct_aircraft_in_profile": 4472,
+  "distinct_aircraft_time_keys_in_profile": 100000,
+  "extra_columns": [],
+  "freshness": {
+    "fields": {
+      "lastcontact": {
+        "after_observation_time": 0,
+        "comparable_rows": 100000,
+        "max_age_seconds": 236.9909999370575,
+        "older_than_threshold": 4770
+      },
+      "lastposupdate": {
+        "after_observation_time": 0,
+        "comparable_rows": 90790,
+        "max_age_seconds": 29047.388999938965,
+        "older_than_threshold": 5219
+      }
+    },
+    "threshold_seconds": 30
+  },
+  "generated_at_utc": "2026-10-07T16:06:41.512756+00:00",
+  "invalid_by_field": {
+    "alert": 0,
+    "baroaltitude": 0,
+    "callsign": 0,
+    "geoaltitude": 0,
+    "heading": 0,
+    "icao24": 0,
+    "lastcontact": 0,
+    "lastposupdate": 0,
+    "lat": 0,
+    "lon": 0,
+    "onground": 0,
+    "spi": 0,
+    "squawk": 0,
+    "time": 0,
+    "velocity": 0,
+    "vertrate": 0
+  },
+  "member_rows_profiled": {
+    "states_2022-06-27-04.csv.gz": 100000
+  },
+  "missing_by_field": {
+    "alert": 0,
+    "baroaltitude": 11933,
+    "callsign": 5394,
+    "geoaltitude": 15828,
+    "heading": 12995,
+    "icao24": 0,
+    "lastcontact": 0,
+    "lastposupdate": 9210,
+    "lat": 9210,
+    "lon": 9210,
+    "onground": 0,
+    "spi": 0,
+    "squawk": 49418,
+    "time": 0,
+    "velocity": 12995,
+    "vertrate": 12995
+  },
+  "observation_time": {
+    "max_epoch_seconds": 1656302640.0,
+    "max_utc": "2022-06-27T04:04:00+00:00",
+    "min_epoch_seconds": 1656302410.0,
+    "min_utc": "2022-06-27T04:00:10+00:00"
+  },
+  "position_bounds": {
+    "max_lat": 68.68526652707892,
+    "max_lon": 176.96502685546875,
+    "min_lat": -46.4765625,
+    "min_lon": -166.73666677167338
+  },
+  "profile_version": 1,
+  "quality_counts": {
+    "duplicate_keys": 0,
+    "duplicates_conflicting_with_first_payload": 0,
+    "duplicates_matching_first_payload": 0,
+    "malformed_rows": 0,
+    "per_aircraft_time_decreases": 0,
+    "rows_with_invalid_values": 0,
+    "rows_with_missing_position": 9210,
+    "rows_with_missing_values": 54604,
+    "source_time_decreases": 0,
+    "usable_identity_and_time": 100000,
+    "usable_positions": 90790
+  },
+  "required_columns": [
+    "time",
+    "icao24",
+    "lat",
+    "lon",
+    "velocity",
+    "heading",
+    "vertrate",
+    "callsign",
+    "onground",
+    "alert",
+    "spi",
+    "squawk",
+    "baroaltitude",
+    "geoaltitude",
+    "lastposupdate",
+    "lastcontact"
+  ],
+  "scope": {
+    "max_rows": 100000,
+    "rows_profiled": 100000,
+    "strategy": "first_rows_in_archive_order",
+    "total_source_rows": null,
+    "truncated": true
+  },
+  "source": {
+    "bytes": 105400320,
+    "dataset_id": "opensky_states_2022-06-27_04",
+    "provider": "The OpenSky Network",
+    "schema_url": "https://s3.opensky-network.org/data-samples/states/README.txt",
+    "sha256": "c85c5609320291d6cf668200ace0641f305c096d53c251ac498c54052b202d59",
+    "source_url": "https://s3.opensky-network.org/data-samples/states/2022-06-27/04/states_2022-06-27-04.csv.tar",
+    "terms_url": "https://s3.opensky-network.org/data-samples/states/LICENSE.txt"
+  }
+}

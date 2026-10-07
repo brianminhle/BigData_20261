@@ -218,3 +218,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Downloaded telemetry and generated acquisition artifacts
+/data/raw/
+/data/manifests/
+/data/reports/
+/data/samples/
