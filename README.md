@@ -1,144 +1,57 @@
-# Scalable Air Traffic Big Data Platform
+# Big Data Storage and Real-Time Processing Platform for Air-Traffic Telemetry
 
-A Big Data Storage and Processing course project that transforms aircraft telemetry into current aircraft states, historical trajectory segments, and regional traffic statistics.
+A course project for a current aircraft map, historical trajectory segments, and regional traffic analytics.
 
-**Status: Data acquisition prototype.** The repository now includes tools to download an OpenSky sample and inspect its data quality. The distributed processing services, deployment configurations, dashboard, and benchmarks are planned.
+**Status:** The first local pipeline works: **historical replay → Kafka → Spark Structured Streaming → HDFS Parquet**. It includes two HDFS DataNodes, persistent checkpoints, a batch read-back command, and recovery checks. Live collection, MongoDB serving, the dashboard, advanced analytics, and Kubernetes remain planned.
 
-## Start here: get the data
+The planned stack is **Lambda architecture with Kafka, Spark, HDFS/Parquet, MongoDB, FastAPI/Streamlit, and Kubernetes**. It will combine bounded live collection with historical replay and reference-data enrichment.
 
-The first working flow is:
+## Run the pipeline
 
-```text
-OpenSky historical archive → original file on disk → quality report
-```
-
-Use Python 3.10 or newer. These tools use the standard library; no packages or containers are needed. Run from the repository root:
+Use Docker Engine with Compose v2, or Docker Desktop. Start with about 8 GB available to Docker and 10 GB free disk for images/builds and this small sample. Run from the repository root:
 
 ```bash
-# 1. Download one historical hour (about 101 MiB).
 python3 scripts/download_sample.py
+docker compose up -d --build
 
-# 2. Inspect the first 100,000 observations.
+# Match the owner of the downloaded files, including on macOS.
+export LOCAL_UID="$(id -u)" LOCAL_GID="$(id -g)"
+docker compose run --rm producer --run-id my-first-run --max-rows 1000 --events-per-second 100
+docker compose run --rm inspect --run-id my-first-run --expect-rows 1000
+```
+
+The first build downloads several GB of public images and connector dependencies. The producer prints broker-acknowledged counts. Inspection reads committed Parquet from HDFS and checks row counts and unique Kafka offsets. Allow Spark to finish its current batch before inspection; if the expected count is not yet visible, check its logs and retry inspection. Use a **new run ID for a new experiment**; republishing a run adds deliveries.
+
+- [Spark UI](http://localhost:4040): running streaming query and jobs.
+- [HDFS UI](http://localhost:9870): two DataNodes and stored files.
+- `docker compose logs -f archive`: Spark logs.
+- `docker compose stop`: stop the services while retaining Kafka, HDFS, and checkpoints.
+
+On October 10, 2026, the local Linux/amd64 check archived **1,000/1,000 events**. After killing Spark and queuing another 100 events, restart archived all 100 and left the original run at 1,000 unique Kafka offsets. HDFS uses replication two on this single host; this does not demonstrate resilience to losing the host. Spark currently runs `local[2]`; distributed executors and MacBook/ARM64 runtime validation remain future work.
+
+See the [data guide](data/README.md#kafka-spark-and-hdfs) for storage paths, recovery rules, verification commands, and limitations.
+
+## Run acquisition and offline checks
+
+Use Python 3.10 or newer from the repository root. These tools use the standard library:
+
+```bash
+python3 scripts/download_sample.py
 python3 scripts/profile_sample.py
-
-# 3. Run the offline tests using small synthetic observations.
+python3 -m scripts.replay_sample --max-rows 100 --events-per-second 10
 python3 -m unittest discover -s tests -v
 ```
 
-The download is stored in `data/raw/`. A manifest in `data/manifests/` records where it came from, its size, and its SHA-256 checksum. The quality report in `data/reports/` summarizes missing fields, invalid values, duplicate observations, and stale positions. Re-running the downloader verifies and reuses the local file.
+The downloader fetches a pinned OpenSky historical hour from June 27, 2022, approximately 100.5 MiB, and records its origin and checksum. The profiler inspects the first 100,000 rows by default; it does not measure the entire file.
 
-The sample is from **June 27, 2022, 04:00–05:00 UTC**. It is historical data for development and later replay. The default report covers a prefix of the file, not the entire hour.
+JSONL replay verifies the archive, selects a bounded prefix, orders it by source snapshot time, and releases one JSON record per line at the requested rate. Original event times stay unchanged; `received_at` records the new release time. Invalid rows become explicit rejection records. The Kafka producer uses the same loader, adapter, and replay clock directly, without republishing old receipt timestamps from a saved JSONL file.
 
-See the [data guide](data/README.md) for the file layout, field meanings, report interpretation, and download troubleshooting. Downloaded observations and local reports are excluded from Git.
+See the [data guide](data/README.md) for fields, report interpretation, download options, and troubleshooting. The [reference profile](data/reference_profile.json) records aggregate findings from the verified sample.
 
-The next implementation step is to define a normalized observation format and build deterministic replay from this verified input. The architecture below describes the intended full platform.
+## Repository contents
 
-## Project objective
-
-Aircraft telemetry creates a large spatiotemporal dataset containing repeated observations, missing measurements, stale positions, and events that may arrive out of order. Storing these observations without a processing strategy makes historical analysis expensive and current-state queries inefficient.
-
-This project will build and evaluate a platform that:
-
-- Ingests historical aircraft observations through a controllable replay service.
-- Processes incoming observations with Apache Flink.
-- Stores analytical tables as Parquet files managed by Apache Iceberg on HDFS.
-- Uses Apache Spark for historical processing, trajectory reconstruction, and storage maintenance.
-- Serves current aircraft states through PostgreSQL and historical analytics through Trino.
-- Measures correctness, storage efficiency, processing performance, and recovery behavior.
-
-## Data products
-
-| Product | Intended capability | Processing and serving |
-| --- | --- | --- |
-| Current aircraft state | Find recently observed aircraft in a region and display their latest usable positions. | Flink updates PostgreSQL; a small API serves the dashboard. |
-| Historical trajectory segments | Retrieve ordered aircraft positions, duration, observed distance, and coverage gaps. | Spark produces point and summary tables in Iceberg; Trino queries them. |
-| Regional traffic statistics | Compare observed aircraft counts, altitude, speed, and vertical movement across areas and time windows. | Flink produces streaming metrics; Spark produces reconciled historical results. |
-
-The current-state demonstration targets **p95 ingestion-to-display latency of at most five seconds** at a declared replay rate. This is a performance target to validate, not an implemented guarantee. During historical replay, “current” refers to the visible simulation clock.
-
-## Proposed architecture
-
-```mermaid
-flowchart TD
-    A[OpenSky historical files] --> B[Python replay service]
-    B --> K[Apache Kafka]
-    K --> F[Apache Flink]
-
-    F --> P[PostgreSQL: current aircraft state]
-    P --> API[FastAPI and Streamlit dashboard]
-
-    F --> L[Iceberg tables on HDFS: raw and cleaned observations, late records, traffic windows]
-    L --> S[Apache Spark batch jobs]
-    S --> G[Iceberg tables on HDFS: trajectory points, summaries, finalized metrics]
-
-    L --> T[Trino]
-    G --> T
-    T --> API
-```
-
-Flink and Spark have distinct responsibilities: Flink handles incoming events and stateful streaming; Spark handles historical reconciliation, trajectory reconstruction, and batch maintenance. The current-state branch updates independently of analytical window completion.
-
-All analytical engines will share an Iceberg JDBC catalog backed by PostgreSQL. Catalog metadata and current aircraft state will use separate databases. HDFS provides distributed file storage, Parquet provides columnar encoding, and Iceberg manages the analytical tables.
-
-## Technology stack
-
-| Technology | Planned role |
-| --- | --- |
-| Apache Kafka | Partitioned ingestion and durable buffering. |
-| Apache Flink / Java | Validation, normalization, duplicate handling, event-time windows, and current-state updates. |
-| Apache Spark / PySpark / SQL | Historical reconciliation, trajectory reconstruction, batch analytics, and file compaction. |
-| HDFS | Distributed storage and configurable block replication. |
-| Apache Parquet + Apache Iceberg | Compressed analytical files, table metadata, snapshots, and partition management. |
-| Trino | Historical SQL queries and query-performance evaluation. |
-| PostgreSQL | Current aircraft state and the Iceberg JDBC catalog in separate databases. |
-| Python / FastAPI / Streamlit | Replay tools, read-only APIs, and a focused demonstration interface. |
-| Docker Compose | A small local development environment. |
-| Kubernetes / K3s + Tailscale | Final deployment across remote Linux VMs hosted on the team's MacBooks. |
-| Prometheus + Grafana | Processing, storage, query, and network observability. |
-
-## Dataset and scale
-
-The initial source is the [OpenSky Network's published scientific state-vector samples](https://opensky-network.org/data/scientific). The [source configuration](data/sources/opensky_sample.json) pins one hourly archive for the acquisition prototype. Larger dataset coverage and capacity still need measurement.
-
-- **Core target:** process at least 10 million real observations.
-- **Extension target:** process 50 million real observations, subject to measured storage and network capacity.
-- **Replay:** support controlled rates, accelerated playback, and reproducible fault injection.
-- **Provenance:** record source files, checksums, row counts, time ranges, and coverage in a dataset manifest.
-
-Repeated replay events will be reported separately from unique source observations. Gaps between sampled days will remain visible, and the platform will describe observed trajectory segments and observed traffic rather than infer complete flights or complete airspace coverage.
-
-Live OpenSky ingestion is an extension after the historical pipeline is working.
-
-## Course focus and evaluation
-
-The project will investigate:
-
-- **Distributed storage:** HDFS replication factors, physical storage consumption, and DataNode failure recovery.
-- **Storage layout:** partition pruning, aircraft bucketing, and the effect of small-file compaction.
-- **Stream processing:** event-time correctness, duplicate handling, state recovery, and backpressure.
-- **Batch processing:** Spark partitioning, shuffles, execution plans, and worker scaling.
-- **Analytical queries:** latency, scanned bytes, file counts, and cache effects.
-
-Experiments will use fixed inputs and configurations, repeated measurements, and recorded network conditions. Performance improvements are hypotheses to test; results will explain cases where additional workers provide limited benefit.
-
-## Deployment constraints
-
-The current resource estimate is a five-person team with four M2/M3 MacBooks, each with approximately 16 GB RAM and 50–100 GB of available disk. The machines are in different locations.
-
-Development will begin with Docker Compose. The final deployment will use one ARM64 Linux VM per MacBook, joined into a K3s cluster through Tailscale. Separate experiment profiles will allocate memory to Flink, Spark, or Trino according to the workload being measured.
-
-The first milestone must verify remote connectivity and sustained throughput. The baseline will demonstrate worker and HDFS DataNode recovery, while documenting the availability limits of its single NameNode, Kafka broker, and control-plane machine.
-
-## Documentation
-
-- [Data acquisition guide](data/README.md): commands, source fields, quality checks, and local artifacts.
-- The local working roadmap is kept in `plan.md`, which is excluded from Git.
-- Deployment instructions will be added alongside working service configurations.
-
-## Technical references
-
-- [OpenSky scientific datasets](https://opensky-network.org/data/scientific)
-- [HDFS user guide](https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-hdfs/HdfsUserGuide.html)
-- [Apache Iceberg documentation](https://iceberg.apache.org/docs/latest/)
-- [Trino HDFS support](https://trino.io/docs/current/object-storage/file-system-hdfs.html)
-- [Trino Iceberg JDBC catalog](https://trino.io/docs/current/object-storage/metastores.html#jdbc-catalog)
+- `scripts/`: acquisition, shared value rules, observation contract, historical adapter, and replay commands.
+- `compose.yaml`, `deploy/`: local Kafka/HDFS/Spark services and pinned image builds.
+- `jobs/`: streaming raw archive and batch inspection using Spark.
+- `tests/`: acquisition, normalization, replay, publication, and Spark transformation checks with synthetic observations.
+- `data/`: source configuration, aggregate reference report, and acquisition guide; downloaded telemetry and generated artifacts are ignored.

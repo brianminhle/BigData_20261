@@ -1,0 +1,130 @@
+name: airtraffic
+
+x-hdfs: &hdfs
+  image: airtraffic-hdfs:3.4.2
+  build:
+    context: .
+    dockerfile: deploy/hdfs/Dockerfile
+  mem_limit: 768m
+  stop_grace_period: 30s
+
+x-spark: &spark
+  image: airtraffic-spark:3.5.7
+  build:
+    context: .
+    dockerfile: deploy/spark/Dockerfile
+  volumes:
+    - ./scripts:/workspace/scripts:ro
+    - ./jobs:/workspace/jobs:ro
+    - ./tests:/workspace/tests:ro
+    - ./data:/workspace/data:ro
+  environment:
+    HADOOP_USER_NAME: hadoop
+    PYTHONPATH: /workspace
+  mem_limit: 2304m
+
+services:
+  kafka:
+    image: apache/kafka:3.9.1@sha256:4ceccc577f03f51f6af8dbfda55194d0d892f4fa7913ffbded567ce3895622ed
+    hostname: kafka
+    ports:
+      - "127.0.0.1:19092:19092"
+    environment:
+      CLUSTER_ID: 4L6g3nShT-eMCtK--X86sw
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_LISTENERS: INTERNAL://:9092,HOST://:19092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,HOST://localhost:19092
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_HEAP_OPTS: -Xms256m -Xmx512m
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    mem_limit: 1024m
+    healthcheck:
+      test: [CMD, /opt/kafka/bin/kafka-topics.sh, --bootstrap-server, kafka:9092, --list]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+
+  topic-init:
+    image: apache/kafka:3.9.1@sha256:4ceccc577f03f51f6af8dbfda55194d0d892f4fa7913ffbded567ce3895622ed
+    depends_on:
+      kafka: {condition: service_healthy}
+    entrypoint: [/opt/kafka/bin/kafka-topics.sh]
+    command: [--bootstrap-server, kafka:9092, --create, --if-not-exists, --topic, airtraffic.replay.v1, --partitions, "3", --replication-factor, "1", --config, retention.ms=604800000]
+    mem_limit: 512m
+
+  namenode:
+    <<: *hdfs
+    hostname: namenode
+    command: [namenode]
+    ports:
+      - "127.0.0.1:9870:9870"
+    volumes:
+      - namenode-data:/var/lib/hadoop/name
+    healthcheck:
+      test: [CMD-SHELL, "hdfs dfsadmin -safemode get | grep -q 'Safe mode is OFF'"]
+      interval: 10s
+      timeout: 10s
+      retries: 18
+      start_period: 20s
+
+  datanode-1:
+    <<: *hdfs
+    hostname: datanode-1
+    command: [datanode]
+    depends_on:
+      namenode: {condition: service_started}
+    volumes:
+      - datanode-1-data:/var/lib/hadoop/data
+
+  datanode-2:
+    <<: *hdfs
+    hostname: datanode-2
+    command: [datanode]
+    depends_on:
+      namenode: {condition: service_started}
+    volumes:
+      - datanode-2-data:/var/lib/hadoop/data
+
+  archive:
+    <<: *spark
+    hostname: archive
+    depends_on:
+      topic-init: {condition: service_completed_successfully}
+      namenode: {condition: service_healthy}
+      datanode-1: {condition: service_started}
+      datanode-2: {condition: service_started}
+    command: [/opt/spark/bin/spark-submit, --master, "local[2]", --driver-memory, 1g, --conf, spark.jars.ivy=/opt/spark/ivy, --conf, spark.jars.ivySettings=/opt/spark/ivysettings.xml, --packages, "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.7", jobs/archive_stream.py]
+    ports:
+      - "127.0.0.1:4040:4040"
+    stop_grace_period: 45s
+
+  producer:
+    <<: *spark
+    profiles: [tools]
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    depends_on:
+      topic-init: {condition: service_completed_successfully}
+    entrypoint: [python3, -m, scripts.publish_replay]
+    mem_limit: 512m
+
+  inspect:
+    <<: *spark
+    profiles: [tools]
+    entrypoint: [/opt/spark/bin/spark-submit, --master, "local[1]", --driver-memory, 512m, jobs/inspect_archive.py]
+    mem_limit: 1280m
+
+volumes:
+  kafka-data:
+  namenode-data:
+  datanode-1-data:
+  datanode-2-data:

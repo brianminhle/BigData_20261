@@ -45,6 +45,19 @@ def read_json(path: Path) -> dict:
     return value
 
 
+def verified_source(manifest_path: Path) -> tuple[dict, Path]:
+    manifest = read_json(manifest_path)
+    if manifest.get("manifest_version") != 1:
+        raise SampleError("Unsupported or missing manifest_version")
+    local_path = manifest.get("local_path")
+    if not isinstance(local_path, str) or not local_path:
+        raise SampleError("Manifest must contain local_path relative to its directory")
+    path = (manifest_path.parent / local_path).resolve()
+    if path.stat().st_size != manifest.get("bytes") or sha256_file(path) != manifest.get("sha256"):
+        raise SampleError("Archive does not match manifest size and SHA-256; read aborted")
+    return manifest, path
+
+
 def write_json(path: Path, value: dict) -> None:
     """Publish complete JSON atomically, including when replacing a report."""
     path.parent.mkdir(parents=True, exist_ok=True)

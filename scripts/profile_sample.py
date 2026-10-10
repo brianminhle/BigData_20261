@@ -13,35 +13,11 @@ import re
 import sys
 
 if __package__:
-    from .sample_io import DEFAULT_MANIFEST, FIELDS, SampleError, iter_rows, read_json, sha256_file, write_json
+    from .sample_io import DEFAULT_MANIFEST, FIELDS, SampleError, iter_rows, read_json, verified_source, write_json
+    from .sample_values import BOOLEANS, NULLS, NUMERIC, numeric_value
 else:
-    from sample_io import DEFAULT_MANIFEST, FIELDS, SampleError, iter_rows, read_json, sha256_file, write_json
-
-NULLS = {"", "null", "none", "\\n"}  # \\N is a common CSV null marker, compared case-insensitively.
-NUMERIC = {"time", "lat", "lon", "velocity", "heading", "vertrate", "baroaltitude", "geoaltitude", "lastposupdate", "lastcontact"}
-BOOLEANS = {"onground", "alert", "spi"}
-
-
-def numeric_value(field: str, text: str) -> float | None:
-    try:
-        value = float(text)
-    except ValueError:
-        return None
-    if not math.isfinite(value):
-        return None
-    if field in {"time", "lastposupdate", "lastcontact"} and not 0 < value < 253402300800:
-        return None
-    if field == "time" and not value.is_integer():
-        return None
-    if field == "lat" and not -90 <= value <= 90:
-        return None
-    if field == "lon" and not -180 <= value <= 180:
-        return None
-    if field == "velocity" and value < 0:
-        return None
-    if field == "heading" and not 0 <= value < 360:
-        return None
-    return value
+    from sample_io import DEFAULT_MANIFEST, FIELDS, SampleError, iter_rows, read_json, verified_source, write_json
+    from sample_values import BOOLEANS, NULLS, NUMERIC, numeric_value
 
 
 def utc(timestamp: float | None) -> str | None:
@@ -172,15 +148,7 @@ def profile(path: Path, max_rows: int = 100000, stale_seconds: float = 30) -> di
 
 
 def profile_manifest(manifest_path: Path, max_rows: int, stale_seconds: float) -> dict:
-    manifest = read_json(manifest_path)
-    if manifest.get("manifest_version") != 1:
-        raise SampleError("Unsupported or missing manifest_version")
-    local_path = manifest.get("local_path")
-    if not isinstance(local_path, str) or not local_path:
-        raise SampleError("Manifest must contain local_path relative to its directory")
-    path = (manifest_path.parent / local_path).resolve()
-    if path.stat().st_size != manifest.get("bytes") or sha256_file(path) != manifest.get("sha256"):
-        raise SampleError("Archive does not match manifest size and SHA-256; profiling aborted")
+    manifest, path = verified_source(manifest_path)
     report = profile(path, max_rows, stale_seconds)
     report["source"] = {key: manifest.get(key) for key in ("dataset_id", "provider", "source_url", "bytes", "sha256", "schema_url", "terms_url")}
     report["generated_at_utc"] = datetime.now(timezone.utc).isoformat()

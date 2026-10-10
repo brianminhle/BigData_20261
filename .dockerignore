@@ -1,0 +1,6 @@
+*
+!deploy/
+!deploy/hdfs/
+!deploy/hdfs/**
+!deploy/spark/
+!deploy/spark/**
