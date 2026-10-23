@@ -123,6 +123,12 @@ services:
     entrypoint: [/opt/spark/bin/spark-submit, --master, "local[1]", --driver-memory, 512m, jobs/inspect_archive.py]
     mem_limit: 1280m
 
+  analytics:
+    <<: *spark
+    profiles: [tools]
+    entrypoint: [/opt/spark/bin/spark-submit, --master, "local[1]", --driver-memory, 512m, jobs/inspect_analytics.py]
+    mem_limit: 1280m
+
 volumes:
   kafka-data:
   namenode-data:

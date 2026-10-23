@@ -2,6 +2,21 @@
 
 This guide documents the working OpenSky downloader, quality profiler, observation adapter, replay, Kafka/Spark/HDFS pipeline, and verified findings.
 
+## Offline checkpoint fixture
+
+The tracked [fixture CSV](fixtures/checkpoint_states.csv) and [checksum manifest](fixtures/checkpoint_manifest.json) let a fresh checkout demonstrate the data path without a download, Docker, or credentials. The 10 rows are synthetic and follow the OpenSky state-vector column layout; they are not observations from the published archive.
+
+```bash
+python3 scripts/profile_sample.py --manifest data/fixtures/checkpoint_manifest.json \
+  --max-rows 10 --output /tmp/checkpoint-profile.json
+python3 -m scripts.replay_sample --manifest data/fixtures/checkpoint_manifest.json \
+  --max-rows 10 --events-per-second 1000000 --run-id checkpoint-demo \
+  > /tmp/checkpoint-demo.jsonl
+wc -l /tmp/checkpoint-demo.jsonl
+```
+
+The profile covers all 10 rows: two have missing positions, one has a position update more than 30 seconds old, and two repeat an aircraft/time key (one matching payload and one conflicting payload). Replay emits eight observations and two explicit rejections for invalid values. This fixture verifies the schema, checksum gate, and replay behavior; use the [reference report](reference_profile.json) for measurements of the real archive's first 100,000 rows.
+
 ## Run it
 
 From the repository root, using Python 3.10 or newer:
