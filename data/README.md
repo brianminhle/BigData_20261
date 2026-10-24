@@ -138,6 +138,16 @@ The Spark build uses Maven Central at `repo.maven.apache.org` and resolves conne
 
 ## Read the report
 
+### Saved batch results
+
+After a replay is fully archived, `docker compose run --rm batch --run-id RUN_ID --output hdfs://namenode:9000/airtraffic/batch/replay-v1/RUN_ID/v1` saves two tables: `traffic/` contains aircraft counts and representative mean speeds by UTC minute and one-degree cell; `trajectory_segments/` contains position-update counts, time ranges, observed distance, and unmeasured edges.
+
+Each table is read back and compared with its computed result for schema, counts, and values. The output root receives `_manifest.json` with run identity, input path, rule version, parameters, schemas, and counts, followed by root `_SUCCESS` only after verification. Consumers must require the root `_SUCCESS`; the markers inside individual Parquet folders do not establish that both tables are complete. Existing output roots are refused, including partial failed versions. Choose a new version after a failure and retain the old one for diagnosis.
+
+These outputs describe the committed input visible when the batch reads it. Wait for the expected replay count before publishing; later arrivals require a new output version. Files remain in HDFS named volumes across service stops. They are not yet published to MongoDB or an API. The checkpoint runner saves a local copy of the manifest as `data/reports/checkpoint/<run-id>/batch.json` plus `analytics.json` for a readable preview.
+
+### Source quality report
+
 By default, the profiler examines the **first 100,000 rows in archive order**. This is a bounded initial inspection, not a random sample or a measurement of the full hour. In particular, its aircraft counts, time range, and geographical bounds describe only those rows.
 
 - `scope.rows_profiled` is the inspected count. `truncated: true` and `total_source_rows: null` mean more source rows exist.

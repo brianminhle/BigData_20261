@@ -2,7 +2,7 @@
 
 A course project for a current aircraft map, historical trajectory segments, and regional traffic analytics.
 
-**Status:** The local pipeline works: **historical replay → Kafka → Spark Structured Streaming → HDFS Parquet**. It includes two HDFS DataNodes, persistent checkpoints, recovery checks, and read-only Spark batch traffic and trajectory summaries over the archive. Live collection, MongoDB serving, the dashboard, advanced analytics, and Kubernetes remain planned.
+**Status:** The local pipeline runs **historical replay → Kafka → Spark Structured Streaming → HDFS Parquet**, with traffic and trajectory summaries. A batch Parquet writer and automated demo are implemented; their full HDFS integration check is still pending after a timeout. Live collection, MongoDB serving, the dashboard, advanced analytics, and Kubernetes remain planned.
 
 The planned stack is **Lambda architecture with Kafka, Spark, HDFS/Parquet, MongoDB, FastAPI/Streamlit, and Kubernetes**. It will combine bounded live collection with historical replay and reference-data enrichment.
 
@@ -25,7 +25,17 @@ The replay writes 10 JSONL records: eight observations and two rejected source r
 
 Use Docker Engine with Compose v2, or Docker Desktop. Start with about 8 GB available to Docker and 10 GB free disk for images/builds and this small sample. Run from the repository root:
 
-### Checkpoint fixture
+```bash
+python3 -m scripts.checkpoint_demo
+```
+
+This command builds/starts Compose, publishes the tracked fixture once, waits for Spark, checks the expected counts, and saves verified batch Parquet in HDFS. It prints the evidence directory under `data/reports/checkpoint/<run-id>/`; open `summary.json`, `analytics.json`, and `batch.json` to show the result. `demo.log` contains command output if a step fails. Only a fully successful run produces `summary.json` with `status: passed`.
+
+Validation so far: the five Spark storage tests pass. The first full automated run reached analytics but timed out during batch publication; it produced no passing summary. Rehearse this command successfully before relying on saved batch output for the presentation. The manual archive and analytics steps below were previously verified.
+
+Use `python3 -m scripts.checkpoint_demo --no-build` once images are built. Each invocation generates a fresh run ID. The fixture needs no download; initial image builds need network access. The runner leaves services running for the Spark/HDFS UIs; stop them afterward with `docker compose stop`. For a failed run, inspect the log and use a new run ID; partial delivery or output can exist.
+
+### Manual checkpoint steps
 
 The tracked fixture runs through Kafka, Spark, and HDFS without downloading the real archive:
 
@@ -38,9 +48,11 @@ docker compose run --rm producer \
   --max-rows 10 --events-per-second 10 --run-id "$RUN_ID"
 docker compose run --rm inspect --run-id "$RUN_ID" --expect-rows 10
 docker compose run --rm analytics --run-id "$RUN_ID" --limit 20
+docker compose run --rm batch --run-id "$RUN_ID" \
+  --output "hdfs://namenode:9000/airtraffic/batch/replay-v1/$RUN_ID/v1"
 ```
 
-In the October 23 Linux/amd64 smoke test, Kafka acknowledged eight observations and two rejections. HDFS inspection found 10 rows with 10 unique Kafka offsets. The batch command found three eligible positions, two minute/cell traffic groups, and two trajectory segments. It reads committed Bronze Parquet and prints JSON; it does not publish a serving dataset.
+In the October 23 Linux/amd64 smoke test, Kafka acknowledged eight observations and two rejections. HDFS inspection found 10 rows with 10 unique Kafka offsets. Analytics found three eligible positions, two minute/cell traffic groups, and two trajectory segments. The `analytics` command prints a preview; `batch` saves both result tables and verifies them by reading them back. Existing output directories are refused; choose a new version for recomputation. This creates batch files, with MongoDB/API publication still planned.
 
 ### Real OpenSky archive
 
@@ -87,8 +99,9 @@ See the [data guide](data/README.md) for fields, report interpretation, download
 
 ## Repository contents
 
-- `scripts/`: acquisition, shared value rules, observation contract, historical adapter, and replay commands.
+- `scripts/`: acquisition, observation contract, replay, and the checkpoint demo runner.
 - `compose.yaml`, `deploy/`: local Kafka/HDFS/Spark services and pinned image builds.
-- `jobs/`: streaming raw archive, batch inspection, and read-only traffic/trajectory analytics using Spark.
+- `jobs/`: streaming raw archive, batch inspection, traffic/trajectory analytics, and verified Parquet output.
 - `tests/`: acquisition, normalization, replay, publication, and Spark transformation checks with synthetic observations.
 - `data/`: source configuration, aggregate reference report, and acquisition guide; downloaded telemetry and generated artifacts are ignored.
+- `docs/plan.md`: short progress tracker; `docs/design.md`: detailed technical reference; `docs/architecture.md`: system diagrams.

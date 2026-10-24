@@ -1,6 +1,6 @@
 # Air-traffic platform architecture
 
-**Checkpoint version:** October 23, 2026, for the October 26 review. This note separates the running local slice from the planned Lambda system. The detailed work plan and acceptance criteria are in [plan.md](plan.md).
+**Checkpoint version:** October 25, 2026, for the October 26 review. This note separates implemented code from the planned Lambda system. Current verification status and next steps are in [plan.md](plan.md); detailed design and acceptance criteria are in [design.md](design.md).
 
 ## Implemented data flow
 
@@ -16,6 +16,7 @@ flowchart LR
     BRONZE --> INSPECT[Spark batch inspector]
     BRONZE --> ANALYTICS[Spark batch analytics]
     ANALYTICS --> SUMMARY[Bounded JSON summary]
+    ANALYTICS --> OUTPUT[Versioned batch Parquet and completion manifest]
     VERIFY --> PROFILE[Bounded quality profile]
 ```
 
@@ -27,6 +28,9 @@ flowchart LR
 | [Spark archive](../jobs/archive_stream.py) | Reads Kafka with two-second triggers, labels envelope status, and preserves original key/payload bytes plus topic, partition, offset, and processing time. It appends every row to Parquet, including malformed or rejected records. |
 | HDFS Bronze and checkpoint | Bronze path: `/airtraffic/bronze/replay-v1`, partitioned by UTC ingestion date. Query checkpoint: `/airtraffic/checkpoints/archive-replay-v1`. The [batch inspector](../jobs/inspect_archive.py) reads committed Parquet from the root and checks row and offset counts for a run. |
 | [Batch analytics](../jobs/batch_analytics.py) and [analytics command](../jobs/inspect_analytics.py) | Read committed Bronze for one run, select eligible positions, and print bounded one-degree-cell/minute traffic and trajectory segment summaries as JSON. This prototype does not yet write Silver/Gold tables or publish serving views. |
+| [Batch writer](../jobs/materialize_analytics.py) | Saves traffic and trajectory Parquet to a new output directory, compares read-back schemas/counts/values, then writes `_manifest.json` and root `_SUCCESS`. Five Spark storage tests pass; the first full HDFS demo timed out, so this integration remains pending. |
+
+The batch writer reads the committed input visible when its job starts. Wait for the expected run count before writing a version. `_RESERVED` is a permanent ownership marker; only root `_SUCCESS` indicates that both datasets finished verification. Existing output directories are refused, including partial failed versions. Later input needs a new version. MongoDB/API publication remains planned.
 
 The deployed [Compose topology](../compose.yaml) has one Kafka broker, one archive Spark process using `local[2]`, one HDFS NameNode, and two DataNode containers on the same physical host. Inspection and analytics launch short-lived Spark jobs using `local[1]`. HDFS writes data and checkpoints with replication two across those DataNodes. Named volumes retain Kafka, HDFS, and checkpoint data when services stop. The two replicas help exercise DataNode behavior; they do not survive loss of the host. This is a local integration setup, not a multi-host Kubernetes deployment.
 
@@ -55,7 +59,7 @@ flowchart LR
 
 The current implementation supplies the **historical replay → Kafka → raw archive** branch and a first batch read of that archive. Live collection, MongoDB speed/serving layers, versioned batch publication, API/dashboard, and Kubernetes are planned. Batch and speed results will share source identity and business rules; the API will select a published batch result for its declared coverage and otherwise use a provisional speed result. It must not add overlapping counts. Historical trajectory gaps and stale positions must remain visible instead of being filled or presented as current.
 
-The target has three user-facing products: latest observed positions with age, recorded trajectory segments with coverage gaps, and regional traffic summaries. The planned system describes *observed* traffic, not complete flights or complete airspace coverage. See [plan.md](plan.md#5-lambda-data-flow-storage-and-correctness) for state rules, publication, storage, and recovery design.
+The target has three user-facing products: latest observed positions with age, recorded trajectory segments with coverage gaps, and regional traffic summaries. The planned system describes *observed* traffic, not complete flights or complete airspace coverage. See [design.md](design.md#5-lambda-data-flow-storage-and-correctness) for state rules, publication, storage, and recovery design.
 
 ## Evidence and next integration boundary
 
