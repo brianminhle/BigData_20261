@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import subprocess
 import time
+from uuid import uuid4
 
 from .sample_io import ROOT
 
@@ -14,7 +15,10 @@ class DemoError(RuntimeError):
 
 
 def run_compose(arguments: list[str], log_path: Path, timeout: float = 180):
+    container_name = f"airtraffic-demo-{uuid4().hex[:12]}" if arguments[0] == "run" else None
     command = ["docker", "compose", *arguments]
+    if container_name:
+        command[3:3] = ["--name", container_name]
     environment = os.environ.copy()
     if hasattr(os, "getuid"):
         environment.setdefault("LOCAL_UID", str(os.getuid()))
@@ -32,10 +36,24 @@ def run_compose(arguments: list[str], log_path: Path, timeout: float = 180):
                 if captured:
                     log.write(captured.decode("utf-8", errors="replace") if isinstance(captured, bytes) else captured)
             log.write(f"Command timed out after {timeout:.1f} seconds\n")
+            _remove_container(container_name, log)
             raise DemoError("Compose command timed out; inspect the services and demo.log") from exc
+        except KeyboardInterrupt:
+            _remove_container(container_name, log)
+            raise
         log.write(result.stdout)
         log.write(result.stderr)
     return result
+
+
+def _remove_container(name, log):
+    if name is None:
+        return
+    try:
+        result = subprocess.run(["docker", "rm", "-f", name], capture_output=True, text=True, timeout=15)
+        log.write(f"Stopped timed-out/interrupted container {name}: {result.returncode}\n")
+    except (OSError, subprocess.TimeoutExpired):
+        log.write(f"Could not stop {name}; inspect it with docker logs and docker stop\n")
 
 
 def result_json(result) -> dict:
@@ -56,11 +74,14 @@ def checked_compose(arguments: list[str], log_path: Path, timeout: float = 180):
     return result
 
 
-def wait_for_archive(run_id: str, log_path: Path, timeout_seconds: float) -> dict:
+def wait_for_archive(run_id: str, log_path: Path, timeout_seconds: float, *, expected_rows=10, path=None) -> dict:
     deadline = time.monotonic() + timeout_seconds
     while (remaining := deadline - time.monotonic()) > 0:
+        arguments = ["run", "--rm", "inspect", "--run-id", run_id, "--expect-rows", str(expected_rows)]
+        if path:
+            arguments.extend(["--path", path])
         result = run_compose(
-            ["run", "--rm", "inspect", "--run-id", run_id, "--expect-rows", "10"],
+            arguments,
             log_path, timeout=min(90, remaining),
         )
         if result.returncode == 0:
@@ -69,7 +90,7 @@ def wait_for_archive(run_id: str, log_path: Path, timeout_seconds: float) -> dic
             summary = result_json(result)
         except DemoError:
             summary = {}
-        if summary.get("rows", 0) >= 10:
+        if summary.get("rows", 0) >= expected_rows:
             raise DemoError("Archive verification failed; choose a new run ID and inspect demo.log")
         time.sleep(min(2, max(0, deadline - time.monotonic())))
-    raise DemoError("Archive did not reach 10 records before the deadline; inspect demo.log")
+    raise DemoError(f"Archive did not reach {expected_rows} records before the deadline; inspect demo.log")

@@ -98,13 +98,27 @@ Duplicates remain in the output. Equal source/aircraft/snapshot identities keep 
 
 The replayer reads **only the first `--max-rows` source rows** (default 1,000; prototype cap 100,000) into memory and sorts that selection by snapshot time, aircraft, member, and record index. Rows with invalid snapshot times go last. This is not a globally sorted replay or a full-file validation. The rate includes rejection records; slow consumers can reduce the achieved rate, and replay does not burst to catch up. It uses constant-rate release, not the original spacing between events.
 
-For this prototype, the replay simulation clock is the current accepted record's `observed_at`; source-age flags compare against that time, never today's date. Identical input and settings preserve ordering, IDs, values, and flags; wall-clock receipt times and automatically generated run IDs vary. Fault injection, large-scale ordering, live ingestion, and measured display latency remain planned.
+For this prototype, the replay simulation clock is the current accepted record's `observed_at`; source-age flags compare against that time, never today's date. Identical input and settings preserve ordering, IDs, values, and flags; wall-clock receipt times and automatically generated run IDs vary. Seeded replay fault injection, large-scale ordering, and measured display latency remain planned.
+
+## Live OpenSky collection
+
+`scripts.collect_live` pulls `/api/states/all` into `airtraffic.live.v1`. `scripts.live_demo` also starts the archive and verifies delivery. See the [run commands](../README.md#live-collection-demonstration). The tracked `fixtures/live_states.json` is synthetic and covers valid, missing, stale, invalid, and malformed vectors; real responses remain ignored under `data/reports/live/<run-id>/`.
+
+The REST adapter reuses historical measurement validation and the common envelope. `observed_at` comes from response `time`, position/contact clocks come from each vector, and `received_at` is sampled after reading the response body. Source observation identity remains `opensky:state:<icao24>:<snapshot>` across retries/runs. Absent REST fields such as `alert` remain null. Rejected vectors keep their original JSON in `raw_fields.state_vector` and are published alongside valid observations.
+
+For live provenance, the existing `archive_sha256` field holds the response-body SHA-256, `member` identifies `states[index]`, `record_index` is one-based, and `adapter_version` is `opensky_rest_v1`. `source_payload_sha256` hashes snapshot time plus the complete canonical state vector. Every received body is saved as `response-NNNN.body`; malformed HTTP/JSON responses stay local evidence, with no invented aircraft record. Responses over 2 MiB are marked truncated and refused; at most 10,000 vectors are normalized per response.
+
+The finite collector reports attempts, HTTP outcomes, acknowledged/rejected/uncertain deliveries, unattempted records, quota headers, snapshot age, and position ages at receipt. Envelope quality flags compare updates against source snapshot time; receipt freshness is an additional check. Repeated source snapshots can still be separate deliveries. Failed publication stops collection: pending sends may have reached Kafka, so only confirmed acknowledgments count as known success. The CLI exits nonzero for failed/interrupted sessions. Existing evidence directories are refused.
+
+As checked on October 25, anonymous OpenSky access has 400 daily credits and ten-second resolution. Our default 8–24° latitude/102–110° longitude bounds cost three credits per request; the demo budgets six credits. Authenticated access uses OAuth2 bearer tokens; Basic authentication is unsupported. Check current provider rules and response headers before increasing collection. [OpenSky REST documentation](https://openskynetwork.github.io/opensky-api/rest.html)
+
+The collector schedules at most three attempts over 60 seconds by default, with a minimum ten-second interval, bounded server/network retry backoff, and a ten-second HTTP operation timeout. Retries consume attempts. HTTP 401/403/429 and other nonretryable responses stop immediately; rate-limit wait headers are recorded. It supports an optional environment-supplied `OPENSKY_ACCESS_TOKEN`; token acquisition/refresh is not automatic. In-flight HTTP/Kafka completion can outlast the scheduling window. These are bounded demonstrations, not an all-day collection service.
 
 ## Kafka, Spark, and HDFS
 
 The local [Compose deployment](../compose.yaml) runs Kafka 3.9.1, Spark 3.5.7 with its matching Scala 2.12 Kafka connector, and Hadoop 3.4.2. Base images are pinned by digest; the producer uses `kafka-python==2.2.15`. Spark uses Java 17; HDFS uses Java 11. Spark's bundled Hadoop client is 3.3.4; the successful local run verifies this client/server combination for this path. Connector settings follow the [Spark Kafka integration guide](https://spark.apache.org/docs/3.5.7/structured-streaming-kafka-integration.html).
 
-Run commands are in the root [README](../README.md#run-the-pipeline). Services publish UIs and the host Kafka listener only on loopback. HDFS and internal Kafka traffic remain on the Compose network. This is a local, unauthenticated teaching deployment. The Kafka topic `airtraffic.replay.v1` has three partitions, replication one, and seven-day retention. A single Kafka broker cannot demonstrate broker failover.
+Run commands are in the root [README](../README.md#run-the-pipeline). Services publish UIs and the host Kafka listener only on loopback. HDFS and internal Kafka traffic remain on the Compose network. This is a local, unauthenticated teaching deployment. The Kafka topics `airtraffic.replay.v1` and `airtraffic.live.v1` each have three partitions, replication one, and seven-day retention. A single Kafka broker cannot demonstrate broker failover.
 
 The producer releases newly normalized observations directly to Kafka. Keys include mode, run, and aircraft, keeping an aircraft's records together within a run. Rejected rows use their source fingerprint when an aircraft key is unavailable. Publication uses broker acknowledgments, bounded pending requests, delivery timeouts, and producer-session idempotence. An application restart or republishing a run can still add duplicates; failure reports may indicate partial delivery. See the [producer's delivery guarantees](https://kafka-python.readthedocs.io/en/2.2.15/apidoc/KafkaProducer.html).
 
@@ -114,6 +128,8 @@ The Spark query uses a two-second micro-batch trigger and reads up to 10,000 Kaf
 | --- | --- |
 | Raw committed Parquet | `hdfs://namenode:9000/airtraffic/bronze/replay-v1`, partitioned by UTC ingestion date. |
 | Spark checkpoint and source offsets | `hdfs://namenode:9000/airtraffic/checkpoints/archive-replay-v1`. |
+| Live raw committed Parquet | `hdfs://namenode:9000/airtraffic/bronze/live-v1`, partitioned by UTC ingestion date. |
+| Live checkpoint and source offsets | `hdfs://namenode:9000/airtraffic/checkpoints/archive-live-v1`. |
 | File sink commit metadata | `_spark_metadata` under the Parquet root. |
 | Kafka/HDFS persistence | Project-scoped Docker named volumes; preserved by `docker compose stop` and ordinary `down`. |
 
@@ -145,6 +161,8 @@ After a replay is fully archived, `docker compose run --rm batch --run-id RUN_ID
 Each table is read back and compared with its computed result for schema, counts, and values. The output root receives `_manifest.json` with run identity, input path, rule version, parameters, schemas, and counts, followed by root `_SUCCESS` only after verification. Consumers must require the root `_SUCCESS`; the markers inside individual Parquet folders do not establish that both tables are complete. Existing output roots are refused, including partial failed versions. Choose a new version after a failure and retain the old one for diagnosis.
 
 These outputs describe the committed input visible when the batch reads it. Wait for the expected replay count before publishing; later arrivals require a new output version. Files remain in HDFS named volumes across service stops. They are not yet published to MongoDB or an API. The checkpoint runner saves a local copy of the manifest as `data/reports/checkpoint/<run-id>/batch.json` plus `analytics.json` for a readable preview.
+
+Use `docker compose run --rm batch-inspect --output HDFS_VERSION_PATH` to read a completed version and preview the saved tables. The October 25 full demonstration passed, and saved values matched after stopping/restarting services. Verification uses a null-safe comparison of complete-row frequencies, preserving duplicate multiplicity; this avoids the observed Spark 3.5.7 `EXCEPT ALL` scheduling hang. The timeout was not increased. A timed-out demo run retains diagnostics and removes only its own temporary job container; failed HDFS versions remain available for diagnosis.
 
 ### Source quality report
 

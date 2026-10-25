@@ -2,6 +2,9 @@
 
 import json
 from datetime import datetime, timezone
+import logging
+
+LOGGER = logging.getLogger(__name__)
 
 
 def _filesystem(spark, path):
@@ -48,7 +51,17 @@ def _verify_dataset(expected, restored, path):
     expected_count = expected.count()
     if expected.dtypes != restored.dtypes or restored.count() != expected_count:
         raise ValueError(f"Read-back schema or row count differs: {path}")
-    if expected.exceptAll(restored).take(1) or restored.exceptAll(expected).take(1):
+    from pyspark.sql import functions as F
+
+    def frequencies(frame):
+        return frame.groupBy(F.struct(*[frame[name] for name in frame.columns]).alias("row")) \
+            .agg(F.count("*").alias("copies"))
+
+    # A null-safe frequency join preserves duplicates without Spark 3.5's stalled EXCEPT ALL union.
+    before, after = frequencies(expected).alias("before"), frequencies(restored).alias("after")
+    differences = before.join(after, before.row.eqNullSafe(after.row), "full_outer") \
+        .where(~before.copies.eqNullSafe(after.copies))
+    if differences.take(1):
         raise ValueError(f"Read-back content differs: {path}")
     return expected_count
 
@@ -60,9 +73,12 @@ def persist_datasets(spark, output_path, datasets, metadata):
     dataset_results = {}
     for name, frame in datasets.items():
         path = f"{output_path}/{name}"
+        LOGGER.warning("Writing batch table: %s", path)
         frame.write.mode("errorifexists").parquet(path)
         restored = spark.read.parquet(path)
+        LOGGER.warning("Verifying batch table: %s", path)
         count = _verify_dataset(frame, restored, path)
+        LOGGER.warning("Verified %s: %s rows", name, count)
         dataset_results[name] = {
             "path": path, "row_count": count, "schema": restored.schema.jsonValue(),
         }

@@ -1,0 +1,174 @@
+{
+  "archives_after_restart": {
+    "live": {
+      "first_source_time": 1792940367,
+      "last_source_time": 1792940378,
+      "mode_counts": {
+        "live": 16
+      },
+      "quality_flags": {
+        "stale_contact": 8,
+        "stale_position": 8
+      },
+      "receipt_to_batch_start_p95_seconds": 4.09489107131958,
+      "rows": 16,
+      "run_id": "live-s4-20261025-final",
+      "status_counts": {
+        "observation": 16
+      },
+      "topic_counts": {
+        "airtraffic.live.v1": 16
+      },
+      "unique_kafka_offsets": 16,
+      "unique_observations": 16
+    },
+    "replay": {
+      "first_source_time": 1656302410,
+      "last_source_time": 1656302440,
+      "mode_counts": {
+        "replay": 10
+      },
+      "quality_flags": {
+        "missing_position": 2,
+        "missing_position_time": 2,
+        "stale_position": 1
+      },
+      "receipt_to_batch_start_p95_seconds": 1.9896092414855957,
+      "rows": 10,
+      "run_id": "checkpoint-s3-20261025-final",
+      "status_counts": {
+        "observation": 8,
+        "source_rejected": 2
+      },
+      "topic_counts": {
+        "airtraffic.replay.v1": 10
+      },
+      "unique_kafka_offsets": 10,
+      "unique_observations": 6
+    }
+  },
+  "kafka": {
+    "broker_count": 1,
+    "topics": {
+      "airtraffic.live.v1": {
+        "partitions": 3,
+        "replication_factor": 1,
+        "retention_ms": 604800000
+      },
+      "airtraffic.replay.v1": {
+        "partitions": 3,
+        "replication_factor": 1,
+        "retention_ms": 604800000
+      }
+    }
+  },
+  "limitations": [
+    "Finite live API responses are source-dependent and include stale positions.",
+    "No MongoDB latest-state table, API/map, streaming traffic reconciliation, or multi-host deployment yet.",
+    "No display-latency or scale claim; two DataNode containers share one host."
+  ],
+  "reproduce": [
+    "python3 -m scripts.checkpoint_demo --no-build",
+    "python3 -m scripts.live_demo --no-build",
+    "python3 -m unittest discover -s tests -v"
+  ],
+  "s3": {
+    "comparison": "Null-safe full-row frequency join checks values and duplicate multiplicity.",
+    "existing_version_refused": true,
+    "incomplete_version_refused": true,
+    "saved_values_equal_after_service_restart": true,
+    "summary": {
+      "archived_rows": 10,
+      "batch_output": "hdfs://namenode:9000/airtraffic/batch/replay-v1/checkpoint-s3-20261025-final/v1",
+      "completed_at": "2026-10-25T14:58:55.013301+00:00",
+      "eligible_positions": 3,
+      "evidence_directory": "data/reports/checkpoint/checkpoint-s3-20261025-final",
+      "run_id": "checkpoint-s3-20261025-final",
+      "status": "passed",
+      "traffic_groups": 2,
+      "trajectory_segments": 2
+    }
+  },
+  "s4": {
+    "attempts": [
+      {
+        "acknowledged": {
+          "observation": 8,
+          "rejected": 0
+        },
+        "freshness": {
+          "fresh_positions_at_receipt": 3,
+          "future_positions_at_receipt": 0,
+          "max_position_age_seconds": 228.0581090450287,
+          "min_position_age_seconds": 11.058109045028687,
+          "missing_positions_or_times": 0,
+          "positions_with_age": 8,
+          "snapshot_age_seconds": 10.058109045028687,
+          "stale_positions_at_receipt": 5
+        },
+        "http_status": 200,
+        "number": 1,
+        "rate_limit": {
+          "x-rate-limit-remaining": "397"
+        }
+      },
+      {
+        "acknowledged": {
+          "observation": 8,
+          "rejected": 0
+        },
+        "freshness": {
+          "fresh_positions_at_receipt": 3,
+          "future_positions_at_receipt": 0,
+          "max_position_age_seconds": 238.72087168693542,
+          "min_position_age_seconds": 10.720871686935425,
+          "missing_positions_or_times": 0,
+          "positions_with_age": 8,
+          "snapshot_age_seconds": 9.720871686935425,
+          "stale_positions_at_receipt": 5
+        },
+        "http_status": 200,
+        "number": 2,
+        "rate_limit": {
+          "x-rate-limit-remaining": "394"
+        }
+      }
+    ],
+    "authentication": "anonymous",
+    "bounds": [
+      8.0,
+      102.0,
+      24.0,
+      110.0
+    ],
+    "http_attempts": 2,
+    "summary": {
+      "acknowledged": {
+        "observation": 16,
+        "rejected": 0
+      },
+      "archived_rows": 16,
+      "evidence_directory": "data/reports/live-demo/live-s4-20261025-final",
+      "run_id": "live-s4-20261025-final",
+      "source_path": "hdfs://namenode:9000/airtraffic/bronze/live-v1",
+      "status": "passed",
+      "unique_kafka_offsets": 16
+    },
+    "uncertain_deliveries": 0
+  },
+  "scope": "Local Linux/amd64 Compose prototype; finite sessions, one physical host",
+  "tests": {
+    "host": {
+      "discovered": 77,
+      "passed": 64,
+      "spark_skipped": 13
+    },
+    "spark_archive": {
+      "passed": 3
+    },
+    "spark_storage": {
+      "passed": 7
+    }
+  },
+  "verified_on": "2026-10-25"
+}

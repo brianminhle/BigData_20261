@@ -54,6 +54,20 @@ class ArchiveSparkTests(unittest.TestCase):
         self.assertEqual(first.squawk, "0042")
         self.assertEqual(rows[0].envelope_status, "observation")
 
+    def test_live_adapter_envelopes_keep_clocks_provenance_and_rejections(self):
+        from dataclasses import asdict
+        from scripts.live_adapter import normalize_response
+        from scripts.sample_io import ROOT
+        _, records = normalize_response((ROOT / "data/fixtures/live_states.json").read_bytes(),
+                                        source_url="fixture://live", run_id="live-test", received_at=1800000010)
+        rows = self.archive([json.dumps(asdict(record)).encode() for record in records])
+        self.assertEqual([row.envelope_status for row in rows], ["observation"] * 3 + ["source_rejected"] * 2)
+        self.assertEqual(rows[0].envelope.mode, "live")
+        self.assertEqual(rows[0].envelope.provenance.adapter_version, "opensky_rest_v1")
+        self.assertEqual(rows[0].envelope.received_at, 1800000010)
+        self.assertEqual(rows[0].envelope.position_updated_at, 1799999995)
+        self.assertIn("state_vector", json.loads(bytes(rows[-1].payload))["raw_fields"])
+
 
 if __name__ == "__main__":
     unittest.main()

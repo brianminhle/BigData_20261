@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 
 from scripts.checkpoint_demo import run_demo
-from scripts.demo_runtime import DemoError, wait_for_archive
+from scripts.demo_runtime import DemoError, run_compose, wait_for_archive
 
 
 def completed(value, returncode=0):
@@ -31,6 +31,20 @@ BATCH = {
 
 
 class DemoTests(unittest.TestCase):
+    def test_timeout_saves_diagnostics_and_removes_only_its_own_container(self):
+        timeout = subprocess.TimeoutExpired(["docker"], 1, output=b"partial stdout", stderr=b"last Spark action")
+        with tempfile.TemporaryDirectory() as folder, patch("scripts.demo_runtime.subprocess.run", side_effect=[
+            timeout, completed({}),
+        ]) as command:
+            log = Path(folder) / "demo.log"
+            with self.assertRaises(DemoError):
+                run_compose(["run", "--rm", "batch"], log, timeout=1)
+            started = command.call_args_list[0].args[0]
+            cleanup = command.call_args_list[1].args[0]
+            self.assertEqual(cleanup, ["docker", "rm", "-f", started[4]])
+            self.assertIn("last Spark action", log.read_text())
+            self.assertIn("partial stdout", log.read_text())
+
     def test_success_retains_evidence_and_failed_publication_never_marks_success(self):
         for final_result in (completed(BATCH), DemoError("batch write interrupted")):
             with self.subTest(final_result=type(final_result).__name__), tempfile.TemporaryDirectory() as folder:

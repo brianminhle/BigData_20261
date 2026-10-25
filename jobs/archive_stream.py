@@ -31,7 +31,7 @@ def main():
                     .option("failOnDataLoss", "true").option("maxOffsetsPerTrigger", 10000).load())
         writer = (archive_rows(incoming).writeStream.format("parquet").outputMode("append")
                   .partitionBy("ingest_date").option("path", args.output)
-                  .option("checkpointLocation", args.checkpoint).queryName("raw_replay_archive"))
+                  .option("checkpointLocation", args.checkpoint).queryName("raw_" + args.topic.replace(".", "_")))
         writer = writer.trigger(availableNow=True) if args.available_now else writer.trigger(processingTime="2 seconds")
         query = writer.start()
         signal.signal(signal.SIGTERM, lambda *_: query.stop())

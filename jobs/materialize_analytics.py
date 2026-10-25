@@ -60,6 +60,7 @@ def main():
     args = parse_args()
     spark = (SparkSession.builder.appName("airtraffic-batch-materialize")
              .config("spark.sql.session.timeZone", "UTC")
+             .config("spark.hadoop.dfs.replication", "2")
              .config("spark.sql.shuffle.partitions", "2").getOrCreate())
     spark.sparkContext.setLogLevel("WARN")
     try:

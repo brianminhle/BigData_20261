@@ -21,6 +21,8 @@ def summarize(rows):
         row.flag: row['count'] for row in rows.select(F.explode("envelope.quality_flags").alias("flag"))
         .groupBy("flag").count().collect()
     }
+    summary["mode_counts"] = {row.mode: row['count'] for row in rows.select("envelope.mode").groupBy("mode").count().collect()}
+    summary["topic_counts"] = {row.topic: row['count'] for row in rows.groupBy("topic").count().collect()}
     return summary
 
 
