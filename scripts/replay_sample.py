@@ -4,28 +4,20 @@ import argparse
 from collections import Counter
 from dataclasses import asdict
 import json
-import math
 from pathlib import Path
 import sys
 from uuid import uuid4
 
-from .replay import replay_records
-from .replay_source import load_replay_source
-from .sample_io import DEFAULT_MANIFEST, SampleError
+from airtraffic.replay import replay_records, validate_replay_settings
+from airtraffic.replay_source import load_replay_source
+from airtraffic.sample_io import DEFAULT_MANIFEST, SampleError
 
 
 def run_replay(
     manifest_path: Path, *, max_rows: int, events_per_second: float,
     run_id: str, stale_seconds: float, output: Path | None,
 ) -> dict:
-    if max_rows <= 0 or max_rows > 100000:
-        raise SampleError("--max-rows must be between 1 and 100000 for this in-memory prototype")
-    if not math.isfinite(events_per_second) or events_per_second <= 0:
-        raise SampleError("--events-per-second must be finite and positive")
-    if not math.isfinite(stale_seconds) or stale_seconds < 0:
-        raise SampleError("--stale-seconds must be finite and nonnegative")
-    if not run_id.strip():
-        raise SampleError("--run-id must not be blank")
+    validate_replay_settings(max_rows, events_per_second, stale_seconds, run_id)
     if output is not None and (output.exists() or output.is_symlink()):
         raise SampleError(f"Output already exists; choose a new path: {output}")
     selected, source = load_replay_source(manifest_path, max_rows)

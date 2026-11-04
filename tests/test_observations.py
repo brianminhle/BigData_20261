@@ -4,9 +4,9 @@ from dataclasses import asdict, replace
 import json
 import unittest
 
-from scripts.historical import normalize_historical
-from scripts.observations import Observation, RejectedObservation, SourceReference
-from scripts.sample_io import FIELDS
+from airtraffic.historical import normalize_historical
+from airtraffic.observations import Observation, RejectedObservation, SourceReference
+from airtraffic.sample_io import FIELDS
 
 
 class ObservationTests(unittest.TestCase):

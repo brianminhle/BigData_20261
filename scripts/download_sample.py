@@ -16,10 +16,10 @@ from urllib.error import URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
-if __package__:
-    from .sample_io import DEFAULT_SOURCE, ROOT, SampleError, inspect_header, read_json, sha256_file, write_json
-else:
-    from sample_io import DEFAULT_SOURCE, ROOT, SampleError, inspect_header, read_json, sha256_file, write_json
+if not __package__:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from airtraffic.sample_io import DEFAULT_SOURCE, ROOT, SampleError, inspect_header, read_json, sha256_file, write_json
 
 
 def validate_source(source: dict) -> None:

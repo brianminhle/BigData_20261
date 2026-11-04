@@ -2,13 +2,44 @@
 
 A course project for a current aircraft map, historical trajectory segments, and regional traffic analytics.
 
-**Status:** S1–S4 are verified locally: **historical replay or bounded live OpenSky collection → separate Kafka topics → Spark Structured Streaming → HDFS Parquet**, plus saved and verified batch traffic/trajectory tables. Next are MongoDB latest-aircraft state (S5) and the API/map (S6). Advanced analytics, full Lambda reconciliation, and Kubernetes remain planned.
+**Status:** S1–S4 are verified locally with processed OpenSky State Vectors: **historical replay or bounded live collection → separate Kafka topics → Spark Structured Streaming → HDFS Parquet**, plus saved batch traffic and trajectory tables. S5 historical raw ADS-B ingestion into Kafka and HDFS is also verified locally on a bounded real sample. Raw reconstruction, serving, reconciliation, and Kubernetes remain planned.
 
-The planned stack is **Lambda architecture with Kafka, Spark, HDFS/Parquet, MongoDB, FastAPI/Streamlit, and Kubernetes**. It will combine bounded live collection with historical replay and reference-data enrichment.
+The planned stack is **Raw-first Lambda architecture with Kafka, Spark, HDFS/Parquet, MongoDB, FastAPI/Streamlit, and Kubernetes**. Historical raw ADS-B replay is the primary input; the existing State Vector pipeline remains a separate verified checkpoint.
+
+## Raw ADS-B ingestion (S5)
+
+Verified on 4 November 2026: **2,100 acknowledged deliveries → 2,100 HDFS rows**, including duplicate receptions and recovery after SIGKILL. See [recorded evidence](data/verification/s5_raw_20261104.json).
+
+Acquire the pinned 2015 sample (27.9 MB) once; the producer checks its SHA-256 on every replay:
+
+```bash
+mkdir -p data/raw
+curl --fail --location 'https://raw.githubusercontent.com/openskynetwork/osky-sample/1b179c1c541b178944010a2eb6fa5189a4f9193d/avro/raw20150421_sample.avro' \
+  -o data/raw/raw20150421_sample.avro
+docker compose build producer
+docker compose --profile raw up -d --no-build raw-archive
+RUN_ID="raw-$(date +%s)"
+docker compose run --no-deps --rm producer \
+  --raw-avro /workspace/data/raw/raw20150421_sample.avro \
+  --run-id "$RUN_ID" --max-rows 1000 --events-per-second 100
+docker compose run --no-deps --rm inspect --raw-adsb \
+  --path hdfs://namenode:9000/airtraffic/bronze/raw-adsb-v1 \
+  --run-id "$RUN_ID" --expect-rows 1000
+```
+
+Wait for a committed streaming batch before inspection; if the expected count is not yet visible, inspect `docker compose logs raw-archive` and retry. Stop services with `docker compose --profile raw stop`; persistent volumes retain the archive and checkpoint.
+
+The source checksum is `f8adc737ff6b2da6446bcaece62586eec91210339ece0147ca699d39555d96af`. Replay reads Avro in file order at a bounded rate, with `--start-record` (zero-based) and `--max-rows` (1–100,000). It does not reorder, filter, deduplicate, or decode messages. Republishing the same records creates additional deliveries with stable reception IDs and new delivery IDs.
+
+Raw data uses `airtraffic.raw.replay.v1`, `/airtraffic/bronze/raw-adsb-v1`, and `/airtraffic/checkpoints/archive-raw-adsb-v1`. Restart `raw-archive` with the same output and checkpoint to resume Kafka offsets. Never share these locations with the State Vector archive.
+
+Each envelope retains `raw_message` exactly as the Avro string and `source_record_json` with **all** source fields, including nullable receiver metadata and receiver-local clocks. `reception_id` hashes the source file SHA-256 and record index. `event_time` explicitly uses `timeAtServer` as a proxy; it is not a radio transmission timestamp. `source_reception_time`, `replay_released_at`, Kafka timestamp, and Spark processing time remain separate. Nonfinite source doubles remain in the source JSON text; searchable event-time fields become null. Bronze preserves original Kafka payload bytes, keys, partitions and offsets without a watermark or deduplication.
 
 ## First checkpoint: 26 October 2026
 
-The [checkpoint plan](docs/plan.md) records completed work and next steps. The [architecture diagram](docs/architecture.md) distinguishes the running local pipeline from the planned Lambda components. A small synthetic fixture is included so a fresh clone can run an offline demonstration:
+The [checkpoint plan](docs/plan.md) records completed work and next steps. The [architecture diagram](docs/architecture.md) distinguishes the running local pipeline from the planned Lambda components. **Present the real OpenSky demo below first.** A small synthetic fixture is also included for repeatable correctness checks without contacting the source:
+
+For a teacher-facing explanation, code map, six-commit history, evidence, and presentation script, use the [first checkpoint guide](docs/checkpoint-guide.md). The project work order remains in the single [active plan](docs/plan.md).
 
 ```bash
 python3 -m unittest discover -s tests -v
@@ -26,14 +57,10 @@ The replay writes 10 JSONL records: eight observations and two rejected source r
 Use Docker Engine with Compose v2, or Docker Desktop. Start with about 8 GB available to Docker and 10 GB free disk for images/builds and this small sample. Run from the repository root:
 
 ```bash
-python3 -m scripts.checkpoint_demo
+python3 -m scripts.live_demo
 ```
 
-This command builds/starts Compose, publishes the tracked fixture once, waits for Spark, checks the expected counts, and saves verified batch Parquet in HDFS. It prints the evidence directory under `data/reports/checkpoint/<run-id>/`; open `summary.json`, `analytics.json`, and `batch.json` to show the result. `demo.log` contains command output if a step fails. Only a fully successful run produces `summary.json` with `status: passed`.
-
-Verified on October 25: run `checkpoint-s3-20261025-final` passed with ten archived records, three eligible positions, two saved traffic rows, and two saved trajectory rows. A Spark comparison hang was fixed; saved rows matched after service restart. Existing output versions and incomplete publications were correctly refused. See the [progress/evidence table](docs/plan.md#verified-progress--25-october-2026).
-
-Use `python3 -m scripts.checkpoint_demo --no-build` once images are built. Each invocation generates a fresh run ID. The fixture needs no download; initial image builds need network access. The runner leaves services running for the Spark/HDFS UIs; stop them afterward with `docker compose stop`. For a failed run, inspect the log and use a new run ID; partial delivery or output can exist.
+This builds/starts the services, requests real OpenSky snapshots, publishes them to Kafka, verifies the Spark/HDFS archive, and calculates and saves traffic and trajectory tables **from that live run**. It then reads the saved tables and writes `data/reports/live-demo/<run-id>/report.md` for presentation. `summary.json` records the counts; `demo.log` retains execution output. The runner declares success only after source, archive, batch, and saved-result checks pass. Initial builds need network access; use `--no-build` once images are built.
 
 ### Live collection demonstration
 
@@ -41,9 +68,25 @@ Use `python3 -m scripts.checkpoint_demo --no-build` once images are built. Each 
 python3 -m scripts.live_demo --no-build
 ```
 
-This starts the additional live topic/archive, makes at most **two requests** over the Vietnam bounding box, and compares broker-acknowledged records with committed HDFS rows, unique offsets, mode, and topic. Reports are under `data/reports/live-demo/<run-id>/`; raw responses and freshness details are under `data/reports/live/<run-id>/`. Only a verified nonempty delivery produces a passing summary. It leaves the archive services running; the collector stops when its session finishes. Use `docker compose --profile live stop` afterward to stop both paths.
+This makes at most **two requests** over the Vietnam bounding box. The terminal prints the actual endpoint, HTTP status, source/receipt timestamps, and position freshness. Broker-acknowledged counts must match committed HDFS rows and unique offsets in the live topic/mode. Spark then writes verified tables under `/airtraffic/batch/live-v1/<run-id>/v1` and reads them back. Open `report.md` for request evidence and result tables, or `saved-results.json` for the table rows. Raw API responses and their hashes are under `data/reports/live/<run-id>/`.
+
+For a longer presentation session, use `python3 -m scripts.live_demo --no-build --max-attempts 6 --duration-seconds 120 --interval-seconds 10`. Requests are bounded; this does not run continuously. A short session may produce zero measured distance, and stale/missing positions can produce empty analytical tables even when ingestion succeeds. Counts come from the source. The demo never substitutes a fixture when OpenSky fails.
+
+Each invocation generates a fresh run ID. The runner leaves archive services running for the UIs; the collector stops when its session finishes. Use `docker compose --profile live stop` afterward to stop both paths while retaining data. For a failed run, inspect `demo.log` and the collector's `session.json`, then use a new run ID; partial delivery or output can exist.
 
 On October 25, two real responses returned eight observations each: **16 acknowledged → 16 archived**, zero uncertain deliveries. Each response contained three positions no older than 30 seconds and five stale positions. Live counts and availability change; keep the fixture demo as the repeatable fallback.
+
+On October 26, the expanded demo passed with **19 real observations → 19 HDFS rows → 12 eligible positions → 3 saved traffic rows + 7 trajectory segments**. Both saved tables were read back. See the [measured evidence](data/verification/live_demo_20261026.json). The local presentation report is `data/reports/live-demo/live-8196ea97138b/report.md`.
+
+### Repeatable fixture check
+
+```bash
+python3 -m scripts.checkpoint_demo --no-build
+```
+
+This uses the tracked synthetic input and checks **10 archived records → 3 eligible positions → 2 traffic rows + 2 trajectory rows**. It saves verified batch results under `/airtraffic/batch/replay-v1/<run-id>/v1`; local evidence is under `data/reports/checkpoint/<run-id>/`. Use it to demonstrate duplicate/invalid-data handling, or as an explicitly labeled offline fallback. The October 25 run `checkpoint-s3-20261025-final` passed; saved values also survived service restart. See the [progress/evidence table](docs/plan.md#verified-progress--25-october-2026).
+
+### Manual live collection
 
 For a custom bounded collection:
 
@@ -121,6 +164,8 @@ docker compose run --rm --no-deps --entrypoint /opt/spark/bin/spark-submit inspe
 
 The October 25 host run passed 64 tests and skipped 13 that require Spark. Separately, seven storage and three archive tests passed in the Spark image. These cover full fixture materialization, null/duplicate value comparison, incomplete publication, source clocks, live rejections, bounded HTTP errors, partial delivery accounting, and false-success prevention. The [tracked aggregate evidence](data/verification/s3_s4_20261025.json) records actual pipeline and restart results. Live API requests occur only when running the collector/demo, not in the test suite.
 
+The October 26 host run passed 69 tests and skipped the same 13 Spark tests. New checks prevent a live demo from passing with missing source evidence, the wrong archive/run, or failed/mismatched saved results. The real live demo also exercised Spark through both saved table read-backs; its results are recorded above.
+
 ## Run acquisition and offline checks
 
 Use Python 3.10 or newer from the repository root. These tools use the standard library:
@@ -140,7 +185,8 @@ See the [data guide](data/README.md) for fields, report interpretation, download
 
 ## Repository contents
 
-- `scripts/`: acquisition, observation contract, replay, and the checkpoint demo runner.
+- `scripts/`: command entry points for acquisition, replay, and checkpoint demos.
+- `airtraffic/`: shared source readers, observation contract, replay, collection, and Kafka publishing logic.
 - `compose.yaml`, `deploy/`: local Kafka/HDFS/Spark services and pinned image builds.
 - `jobs/`: streaming raw archive, batch inspection, traffic/trajectory analytics, and verified Parquet output.
 - `tests/`: acquisition, normalization, replay, publication, and Spark transformation checks with synthetic observations.

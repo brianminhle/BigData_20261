@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 
 from scripts.checkpoint_demo import run_demo
-from scripts.demo_runtime import DemoError, run_compose, wait_for_archive
+from airtraffic.demo_runtime import DemoError, run_compose, wait_for_archive
 
 
 def completed(value, returncode=0):
@@ -33,7 +33,7 @@ BATCH = {
 class DemoTests(unittest.TestCase):
     def test_timeout_saves_diagnostics_and_removes_only_its_own_container(self):
         timeout = subprocess.TimeoutExpired(["docker"], 1, output=b"partial stdout", stderr=b"last Spark action")
-        with tempfile.TemporaryDirectory() as folder, patch("scripts.demo_runtime.subprocess.run", side_effect=[
+        with tempfile.TemporaryDirectory() as folder, patch("airtraffic.demo_runtime.subprocess.run", side_effect=[
             timeout, completed({}),
         ]) as command:
             log = Path(folder) / "demo.log"
@@ -84,15 +84,15 @@ class DemoTests(unittest.TestCase):
             command.assert_not_called()
 
     def test_archive_wait_retries_incomplete_reads(self):
-        with patch("scripts.demo_runtime.run_compose", side_effect=[
+        with patch("airtraffic.demo_runtime.run_compose", side_effect=[
             completed({"rows": 0}, returncode=1), completed(ARCHIVE),
-        ]) as command, patch("scripts.demo_runtime.time.sleep"):
+        ]) as command, patch("airtraffic.demo_runtime.time.sleep"):
             self.assertEqual(wait_for_archive("test-run", Path("unused.log"), 20), ARCHIVE)
             self.assertEqual(command.call_count, 2)
             self.assertTrue(all(call.args[0][2] == "inspect" for call in command.call_args_list))
 
     def test_archive_wait_refuses_duplicate_run_instead_of_retrying(self):
-        with patch("scripts.demo_runtime.run_compose", return_value=completed({"rows": 20}, returncode=1)) as command:
+        with patch("airtraffic.demo_runtime.run_compose", return_value=completed({"rows": 20}, returncode=1)) as command:
             with self.assertRaisesRegex(DemoError, "new run ID"):
                 wait_for_archive("test-run", Path("unused.log"), 20)
             command.assert_called_once()

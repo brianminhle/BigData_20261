@@ -5,7 +5,7 @@ import threading
 import unittest
 from unittest.mock import patch
 
-from scripts.opensky_http import fetch_snapshot
+from airtraffic.opensky_http import fetch_snapshot
 
 
 class FixtureHandler(BaseHTTPRequestHandler):
@@ -59,7 +59,7 @@ class OpenSkyHttpTests(unittest.TestCase):
         self.assertEqual(len(FixtureHandler.requests), before + 1)
 
     def test_body_size_limit_is_explicit(self):
-        with patch("scripts.opensky_http.MAX_RESPONSE_BYTES", 5):
+        with patch("airtraffic.opensky_http.MAX_RESPONSE_BYTES", 5):
             response = fetch_snapshot(self.base + "/ok", 2)
         self.assertTrue(response.truncated)
         self.assertEqual(len(response.body), 5)

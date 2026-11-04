@@ -56,8 +56,8 @@ class ArchiveSparkTests(unittest.TestCase):
 
     def test_live_adapter_envelopes_keep_clocks_provenance_and_rejections(self):
         from dataclasses import asdict
-        from scripts.live_adapter import normalize_response
-        from scripts.sample_io import ROOT
+        from airtraffic.live_adapter import normalize_response
+        from airtraffic.sample_io import ROOT
         _, records = normalize_response((ROOT / "data/fixtures/live_states.json").read_bytes(),
                                         source_url="fixture://live", run_id="live-test", received_at=1800000010)
         rows = self.archive([json.dumps(asdict(record)).encode() for record in records])

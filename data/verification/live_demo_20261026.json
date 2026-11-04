@@ -1,0 +1,113 @@
+{
+  "acknowledged": {
+    "observation": 19,
+    "rejected": 0
+  },
+  "analytics": {
+    "eligible_positions": 12,
+    "max_position_age_seconds": 30.0,
+    "output_path": "hdfs://namenode:9000/airtraffic/batch/live-v1/live-8196ea97138b/v1",
+    "read_back_status": "verified",
+    "saved_table_rows": {
+      "traffic": 3,
+      "trajectory_segments": 7
+    },
+    "source_path": "hdfs://namenode:9000/airtraffic/bronze/live-v1"
+  },
+  "archive": {
+    "first_source_time": 1792974878,
+    "last_source_time": 1792974887,
+    "mode_counts": {
+      "live": 19
+    },
+    "quality_flags": {
+      "stale_contact": 7,
+      "stale_position": 7
+    },
+    "receipt_to_batch_start_p95_seconds": 0.9769930839538574,
+    "rows": 19,
+    "run_id": "live-8196ea97138b",
+    "status_counts": {
+      "observation": 19
+    },
+    "topic_counts": {
+      "airtraffic.live.v1": 19
+    },
+    "unique_kafka_offsets": 19,
+    "unique_observations": 19
+  },
+  "authentication": "anonymous",
+  "host_tests": {
+    "passed": 69,
+    "run": 82,
+    "skipped_requires_spark": 13
+  },
+  "limitations": [
+    "Single host; no broker failover or distributed Spark executor validation.",
+    "Live counts and freshness depend on source responses; short segments are not complete flights.",
+    "Analytics is a separate batch job on the live archive; streaming traffic aggregation remains planned.",
+    "MongoDB serving state and the application map remain planned."
+  ],
+  "local_report": "data/reports/live-demo/live-8196ea97138b/report.md",
+  "reproduce": "python3 -m scripts.live_demo --no-build",
+  "run_id": "live-8196ea97138b",
+  "scope": "Bounded real OpenSky collection through local Kafka, Spark streaming, HDFS, and saved Spark batch results",
+  "source_requests": [
+    {
+      "acknowledged": {
+        "observation": 9,
+        "rejected": 0
+      },
+      "freshness": {
+        "fresh_positions_at_receipt": 6,
+        "future_positions_at_receipt": 0,
+        "max_position_age_seconds": 274.9594714641571,
+        "min_position_age_seconds": 1.9594714641571045,
+        "missing_positions_or_times": 0,
+        "positions_with_age": 9,
+        "snapshot_age_seconds": 1.9594714641571045,
+        "stale_positions_at_receipt": 3
+      },
+      "http_status": 200,
+      "normalized_records": 9,
+      "number": 1,
+      "outcome": "ok",
+      "rate_limit": {
+        "x-rate-limit-remaining": "391"
+      },
+      "received_at": 1792974879.9594715,
+      "response_sha256": "a4338e21ae57eec0bf9d853e07556f7e4d73952cd4ed9e6c1f128690c80b67f8",
+      "snapshot_time": 1792974878
+    },
+    {
+      "acknowledged": {
+        "observation": 10,
+        "rejected": 0
+      },
+      "freshness": {
+        "fresh_positions_at_receipt": 5,
+        "future_positions_at_receipt": 0,
+        "max_position_age_seconds": 286.03200697898865,
+        "min_position_age_seconds": 4.0320069789886475,
+        "missing_positions_or_times": 0,
+        "positions_with_age": 10,
+        "snapshot_age_seconds": 4.0320069789886475,
+        "stale_positions_at_receipt": 5
+      },
+      "http_status": 200,
+      "normalized_records": 10,
+      "number": 2,
+      "outcome": "ok",
+      "rate_limit": {
+        "x-rate-limit-remaining": "388"
+      },
+      "received_at": 1792974891.032007,
+      "response_sha256": "b57a40ede52eec7a22615ec497789eb45079d51332e96a4062ca927a7a7d6f07",
+      "snapshot_time": 1792974887
+    }
+  ],
+  "source_url": "https://opensky-network.org/api/states/all?lamin=8&lomin=102&lamax=24&lomax=110",
+  "status": "passed",
+  "uncertain_deliveries": 0,
+  "verified_date": "2026-10-26"
+}

@@ -9,11 +9,11 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts.historical import normalize_historical
-from scripts.observations import SourceReference
-from scripts.replay import ordered_prefix, replay_records
+from airtraffic.historical import normalize_historical
+from airtraffic.observations import SourceReference
+from airtraffic.replay import ordered_prefix, replay_records
 from scripts.replay_sample import main, run_replay
-from scripts.sample_io import FIELDS, SampleError, sha256_file, write_json
+from airtraffic.sample_io import FIELDS, SampleError, sha256_file, write_json
 
 
 def source_row(index, timestamp="1656302410", identifier="00abcd"):
@@ -63,7 +63,7 @@ class ReplayTests(unittest.TestCase):
         self.assertEqual([record.provenance.record_index for record in records], [2, 3, 1, 4])
 
     def test_receive_clock_is_sampled_at_release_before_normalization(self):
-        with patch("scripts.replay.normalize_historical", wraps=normalize_historical) as normalize:
+        with patch("airtraffic.replay.normalize_historical", wraps=normalize_historical) as normalize:
             stream = self.replay([source_row(1), source_row(2), source_row(3)])
             first = next(stream)
             normalize.assert_called_once()

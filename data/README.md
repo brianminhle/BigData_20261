@@ -78,7 +78,7 @@ python3 -m scripts.replay_sample --max-rows 1000 --events-per-second 100 \
 
 Each line is one JSON object. Run metadata and accepted/rejected counts go to stderr, leaving stdout suitable for piping. `--manifest` selects a downloaded source; its size and SHA-256 must match before any row is released. No API request is made. Files under `data/samples/` are ignored by Git. Existing output files are never overwritten; an interrupted run can leave a partial JSONL file.
 
-The [version-one contract](../scripts/observations.py) and [historical adapter](../scripts/historical.py) produce:
+The [version-one contract](../airtraffic/observations.py) and [historical adapter](../airtraffic/historical.py) produce:
 
 | Fields | Behavior |
 | --- | --- |

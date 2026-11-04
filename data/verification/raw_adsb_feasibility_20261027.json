@@ -1,0 +1,1783 @@
+{
+  "assessed_at_utc": "2026-10-26T17:07:38.494093+00:00",
+  "datasets": {
+    "2015_full_sample": {
+      "manifest": {
+        "url": "https://raw.githubusercontent.com/openskynetwork/osky-sample/1b179c1c541b178944010a2eb6fa5189a4f9193d/avro/raw20150421_sample.avro",
+        "commit": "1b179c1c541b178944010a2eb6fa5189a4f9193d",
+        "sha256": "f8adc737ff6b2da6446bcaece62586eec91210339ece0147ca699d39555d96af",
+        "bytes": 27876685,
+        "rows": 304131,
+        "avro_codec": "null",
+        "avro_schema": {
+          "type": "record",
+          "name": "org.opensky.avro.v2.ModeSEncodedMessage",
+          "fields": [
+            {
+              "name": "sensorType",
+              "type": "string"
+            },
+            {
+              "name": "sensorLatitude",
+              "type": [
+                "double",
+                "null"
+              ]
+            },
+            {
+              "name": "sensorLongitude",
+              "type": [
+                "double",
+                "null"
+              ]
+            },
+            {
+              "name": "sensorAltitude",
+              "type": [
+                "double",
+                "null"
+              ]
+            },
+            {
+              "name": "timeAtServer",
+              "type": "double"
+            },
+            {
+              "name": "timeAtSensor",
+              "type": [
+                "double",
+                "null"
+              ]
+            },
+            {
+              "name": "timestamp",
+              "type": [
+                "double",
+                "null"
+              ]
+            },
+            {
+              "name": "rawMessage",
+              "type": "string"
+            },
+            {
+              "name": "sensorSerialNumber",
+              "type": "int"
+            },
+            {
+              "name": "RSSIPacket",
+              "type": [
+                "double",
+                "null"
+              ]
+            },
+            {
+              "name": "RSSIPreamble",
+              "type": [
+                "double",
+                "null"
+              ]
+            },
+            {
+              "name": "SNR",
+              "type": [
+                "double",
+                "null"
+              ]
+            },
+            {
+              "name": "confidence",
+              "type": [
+                "double",
+                "null"
+              ]
+            }
+          ]
+        },
+        "conversion": "Avro to Parquet; all fields and rows retained; record_index added"
+      },
+      "profile": {
+        "rows": 304131,
+        "spark_version": "3.5.7",
+        "master": "local[2]",
+        "shuffle_partitions": 4,
+        "decode_and_cache_seconds": 7.512918327999614,
+        "null_counts": {
+          "record_index": 0,
+          "sensorType": 0,
+          "sensorLatitude": 0,
+          "sensorLongitude": 0,
+          "sensorAltitude": 17621,
+          "timeAtServer": 0,
+          "timeAtSensor": 304131,
+          "timestamp": 0,
+          "rawMessage": 0,
+          "sensorSerialNumber": 0,
+          "RSSIPacket": 181786,
+          "RSSIPreamble": 304131,
+          "SNR": 304131,
+          "confidence": 304131
+        },
+        "nonfinite_counts": {
+          "sensorLatitude": 0,
+          "sensorLongitude": 0,
+          "sensorAltitude": 0,
+          "timeAtServer": 0,
+          "timestamp": 0,
+          "RSSIPacket": 0
+        },
+        "message_distribution": [
+          {
+            "df": 16,
+            "typecode": null,
+            "category": "other_mode_s",
+            "format_valid": true,
+            "crc_ok": null,
+            "count": 261
+          },
+          {
+            "df": 17,
+            "typecode": 0,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 3
+          },
+          {
+            "df": 17,
+            "typecode": 0,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 4
+          },
+          {
+            "df": 17,
+            "typecode": 3,
+            "category": "identification",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 15
+          },
+          {
+            "df": 17,
+            "typecode": 3,
+            "category": "identification",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 12
+          },
+          {
+            "df": 17,
+            "typecode": 4,
+            "category": "identification",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 7787
+          },
+          {
+            "df": 17,
+            "typecode": 4,
+            "category": "identification",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 5144
+          },
+          {
+            "df": 17,
+            "typecode": 6,
+            "category": "surface_position",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 4
+          },
+          {
+            "df": 17,
+            "typecode": 7,
+            "category": "surface_position",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 511
+          },
+          {
+            "df": 17,
+            "typecode": 8,
+            "category": "surface_position",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 205
+          },
+          {
+            "df": 17,
+            "typecode": 10,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 2433
+          },
+          {
+            "df": 17,
+            "typecode": 10,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 567
+          },
+          {
+            "df": 17,
+            "typecode": 11,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 39330
+          },
+          {
+            "df": 17,
+            "typecode": 11,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 46989
+          },
+          {
+            "df": 17,
+            "typecode": 12,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 4247
+          },
+          {
+            "df": 17,
+            "typecode": 12,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 18459
+          },
+          {
+            "df": 17,
+            "typecode": 13,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 2675
+          },
+          {
+            "df": 17,
+            "typecode": 13,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 92
+          },
+          {
+            "df": 17,
+            "typecode": 16,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 232
+          },
+          {
+            "df": 17,
+            "typecode": 16,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 596
+          },
+          {
+            "df": 17,
+            "typecode": 18,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 5286
+          },
+          {
+            "df": 17,
+            "typecode": 18,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 4791
+          },
+          {
+            "df": 17,
+            "typecode": 19,
+            "category": "velocity",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 76894
+          },
+          {
+            "df": 17,
+            "typecode": 19,
+            "category": "velocity",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 49337
+          },
+          {
+            "df": 17,
+            "typecode": 23,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 138
+          },
+          {
+            "df": 17,
+            "typecode": 23,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 9174
+          },
+          {
+            "df": 17,
+            "typecode": 28,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 256
+          },
+          {
+            "df": 17,
+            "typecode": 28,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 425
+          },
+          {
+            "df": 17,
+            "typecode": 29,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 1093
+          },
+          {
+            "df": 17,
+            "typecode": 29,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 2115
+          },
+          {
+            "df": 17,
+            "typecode": 31,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 1554
+          },
+          {
+            "df": 17,
+            "typecode": 31,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 1811
+          },
+          {
+            "df": 18,
+            "typecode": 0,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 2
+          },
+          {
+            "df": 18,
+            "typecode": 2,
+            "category": "identification",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 470
+          },
+          {
+            "df": 18,
+            "typecode": 8,
+            "category": "surface_position",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 2
+          },
+          {
+            "df": 18,
+            "typecode": 24,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 6296
+          },
+          {
+            "df": 18,
+            "typecode": 27,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 1
+          },
+          {
+            "df": 20,
+            "typecode": null,
+            "category": "other_mode_s",
+            "format_valid": true,
+            "crc_ok": null,
+            "count": 11892
+          },
+          {
+            "df": 21,
+            "typecode": null,
+            "category": "other_mode_s",
+            "format_valid": true,
+            "crc_ok": null,
+            "count": 3028
+          }
+        ],
+        "unique_df17_aircraft": 308,
+        "unique_payloads": 169867,
+        "time_ranges": {
+          "timeAtServer_min": 1429617600.000027,
+          "timeAtServer_max": 1429617900.999499,
+          "timeAtSensor_min": null,
+          "timeAtSensor_max": null,
+          "timestamp_min": 164,
+          "timestamp_max": 1073671020
+        },
+        "file_order_regressions": 0,
+        "clock_differences": [
+          {
+            "sensorType": "SBS-3",
+            "comparable_rows": 0,
+            "min": null,
+            "max": null,
+            "p01_p50_p99": null
+          },
+          {
+            "sensorType": "dump1090",
+            "comparable_rows": 0,
+            "min": null,
+            "max": null,
+            "p01_p50_p99": null
+          },
+          {
+            "sensorType": "Radarcape",
+            "comparable_rows": 0,
+            "min": null,
+            "max": null,
+            "p01_p50_p99": null
+          }
+        ],
+        "duplication": [
+          {
+            "candidate_groups": 302666,
+            "repeated_groups": 1437,
+            "multi_sensor_groups": 1430,
+            "multi_sensor_receptions": 2888,
+            "groups_with_repeated_sensor": 7,
+            "chained_groups_exceeding_threshold": 14,
+            "max_group_span_seconds": 0.0019199848175048828,
+            "gap_threshold_seconds": 0.001
+          },
+          {
+            "candidate_groups": 292567,
+            "repeated_groups": 10495,
+            "multi_sensor_groups": 9647,
+            "multi_sensor_receptions": 20334,
+            "groups_with_repeated_sensor": 866,
+            "chained_groups_exceeding_threshold": 125,
+            "max_group_span_seconds": 0.029772043228149414,
+            "gap_threshold_seconds": 0.01
+          },
+          {
+            "candidate_groups": 271197,
+            "repeated_groups": 28303,
+            "multi_sensor_groups": 26572,
+            "multi_sensor_receptions": 57504,
+            "groups_with_repeated_sensor": 1964,
+            "chained_groups_exceeding_threshold": 299,
+            "max_group_span_seconds": 0.5792300701141357,
+            "gap_threshold_seconds": 0.1
+          }
+        ],
+        "baro_position_receptions": 49623,
+        "baro_position_aircraft": 289,
+        "baro_position_parity": [
+          {
+            "odd": 0,
+            "count": 25016
+          },
+          {
+            "odd": 1,
+            "count": 24607
+          }
+        ],
+        "wall_seconds": 20.507131944999855,
+        "receiver_count": 17
+      },
+      "quality-checks": {
+        "crc_by_receiver": [
+          {
+            "sensorType": "Radarcape",
+            "df": 17,
+            "crc_ok": true,
+            "zero_parity": false,
+            "count": 101293
+          },
+          {
+            "sensorType": "Radarcape",
+            "df": 18,
+            "crc_ok": true,
+            "zero_parity": false,
+            "count": 1
+          },
+          {
+            "sensorType": "SBS-3",
+            "df": 17,
+            "crc_ok": false,
+            "zero_parity": true,
+            "count": 175016
+          },
+          {
+            "sensorType": "SBS-3",
+            "df": 18,
+            "crc_ok": false,
+            "zero_parity": true,
+            "count": 6770
+          },
+          {
+            "sensorType": "dump1090",
+            "df": 17,
+            "crc_ok": true,
+            "zero_parity": false,
+            "count": 5870
+          }
+        ],
+        "receiver_clock_diagnostics": [
+          {
+            "sensorType": "SBS-3",
+            "rows": 181786,
+            "sensor_clock_min": null,
+            "sensor_clock_max": null,
+            "sensor_clock_zero": null,
+            "counter_regressions": 3881,
+            "sensor_clock_regressions": null
+          },
+          {
+            "sensorType": "dump1090",
+            "rows": 21051,
+            "sensor_clock_min": null,
+            "sensor_clock_max": null,
+            "sensor_clock_zero": null,
+            "counter_regressions": 4,
+            "sensor_clock_regressions": null
+          },
+          {
+            "sensorType": "Radarcape",
+            "rows": 101294,
+            "sensor_clock_min": null,
+            "sensor_clock_max": null,
+            "sensor_clock_zero": null,
+            "counter_regressions": 903,
+            "sensor_clock_regressions": null
+          }
+        ],
+        "df17_grouping_with_zero_parity_marked_unverified": {
+          "wire_payload": {
+            "candidate_groups": 270993,
+            "repeated_groups": 10146,
+            "multi_sensor_groups": 9647,
+            "multi_sensor_receptions": 20334,
+            "groups_with_repeated_sensor": 517,
+            "chained_groups_exceeding_threshold": 115,
+            "max_group_span_seconds": 0.029772043228149414,
+            "gap_threshold_seconds": 0.01
+          },
+          "payload_without_parity": {
+            "candidate_groups": 269424,
+            "repeated_groups": 11523,
+            "multi_sensor_groups": 11024,
+            "multi_sensor_receptions": 23280,
+            "groups_with_repeated_sensor": 517,
+            "chained_groups_exceeding_threshold": 231,
+            "max_group_span_seconds": 0.029772043228149414,
+            "gap_threshold_seconds": 0.01
+          }
+        },
+        "crc_caution": "SBS-3 zero-parity records are unverified under transmitted-message CRC, not demonstrated corrupt; other DFs have different parity semantics"
+      },
+      "reconstruction": {
+        "input_position_receptions": 49623,
+        "exact_unique_events": 49622,
+        "policy": "Most recent preceding opposite parity per ICAO in (server time, record index) order; <=10s; DF17 TC9-18; no fallback after zone mismatch",
+        "status_counts": {
+          "expired_pair": 1683,
+          "zone_mismatch": 72,
+          "no_prior_opposite": 738,
+          "decoded": 47129
+        },
+        "decoder_reference": "pyModeS 2.21.1 airborne_position",
+        "independent_pairing_mismatches": 0,
+        "coordinate_agreement": {
+          "max_latitude_error_degrees": 0,
+          "max_longitude_error_degrees": 0,
+          "aircraft_with_decoded_positions": 254
+        },
+        "equal_timestamp_pairs": 0,
+        "published_known_answer": [
+          52.2572021484375,
+          3.91937255859375
+        ],
+        "wall_seconds": 15.680865001000711,
+        "validation_passed": true
+      }
+    },
+    "2017_archive_prefix": {
+      "manifest": {
+        "url": "https://s3.opensky-network.org/data-samples/raw/20170109_16_anonymized.avro.bz2",
+        "http_status": 206,
+        "content_range": "bytes 0-16777215/3830325919",
+        "downloaded_bytes": 16777216,
+        "decompressed_prefix_bytes": 95226621,
+        "sha256_prefix": "19e2ce11427516679b1d4620519d4ce78c1b699e81d48c28598f2987bf193d50",
+        "complete_records_in_prefix": 1127250,
+        "termination": "EOFError: Expected 64007 bytes, read 25849",
+        "avro_schema": {
+          "type": "record",
+          "name": "org.opensky.avro.v2.ModeSEncodedMessage",
+          "fields": [
+            {
+              "name": "sensorType",
+              "type": "string"
+            },
+            {
+              "name": "sensorLatitude",
+              "type": [
+                "double",
+                "null"
+              ]
+            },
+            {
+              "name": "sensorLongitude",
+              "type": [
+                "double",
+                "null"
+              ]
+            },
+            {
+              "name": "sensorAltitude",
+              "type": [
+                "double",
+                "null"
+              ]
+            },
+            {
+              "name": "timeAtServer",
+              "type": "double"
+            },
+            {
+              "name": "timeAtSensor",
+              "type": [
+                "double",
+                "null"
+              ]
+            },
+            {
+              "name": "timestamp",
+              "type": [
+                "double",
+                "null"
+              ]
+            },
+            {
+              "name": "rawMessage",
+              "type": "string"
+            },
+            {
+              "name": "sensorSerialNumber",
+              "type": "int"
+            },
+            {
+              "name": "RSSIPacket",
+              "type": [
+                "double",
+                "null"
+              ]
+            },
+            {
+              "name": "RSSIPreamble",
+              "type": [
+                "double",
+                "null"
+              ]
+            },
+            {
+              "name": "SNR",
+              "type": [
+                "double",
+                "null"
+              ]
+            },
+            {
+              "name": "confidence",
+              "type": [
+                "double",
+                "null"
+              ]
+            }
+          ]
+        },
+        "sampling": "First 16 MiB compressed bytes only; neither random nor complete-hour coverage"
+      },
+      "profile": {
+        "rows": 1127250,
+        "spark_version": "3.5.7",
+        "master": "local[2]",
+        "shuffle_partitions": 4,
+        "decode_and_cache_seconds": 12.860972327000127,
+        "null_counts": {
+          "record_index": 0,
+          "sensorType": 0,
+          "sensorLatitude": 632744,
+          "sensorLongitude": 632744,
+          "sensorAltitude": 632744,
+          "timeAtServer": 0,
+          "timeAtSensor": 9987,
+          "timestamp": 0,
+          "rawMessage": 0,
+          "sensorSerialNumber": 0,
+          "RSSIPacket": 9987,
+          "RSSIPreamble": 1127250,
+          "SNR": 1127250,
+          "confidence": 1127250
+        },
+        "nonfinite_counts": {
+          "sensorLatitude": 0,
+          "sensorLongitude": 0,
+          "sensorAltitude": 0,
+          "timeAtServer": 0,
+          "timeAtSensor": 0,
+          "timestamp": 0,
+          "RSSIPacket": 0
+        },
+        "message_distribution": [
+          {
+            "df": 0,
+            "typecode": null,
+            "category": "other_mode_s",
+            "format_valid": true,
+            "crc_ok": null,
+            "count": 206513
+          },
+          {
+            "df": 4,
+            "typecode": null,
+            "category": "other_mode_s",
+            "format_valid": true,
+            "crc_ok": null,
+            "count": 121327
+          },
+          {
+            "df": 5,
+            "typecode": null,
+            "category": "other_mode_s",
+            "format_valid": true,
+            "crc_ok": null,
+            "count": 43135
+          },
+          {
+            "df": 10,
+            "typecode": null,
+            "category": "other_mode_s",
+            "format_valid": true,
+            "crc_ok": null,
+            "count": 1
+          },
+          {
+            "df": 11,
+            "typecode": null,
+            "category": "other_mode_s",
+            "format_valid": true,
+            "crc_ok": null,
+            "count": 372603
+          },
+          {
+            "df": 11,
+            "typecode": null,
+            "category": "length_mismatch",
+            "format_valid": false,
+            "crc_ok": null,
+            "count": 61
+          },
+          {
+            "df": 16,
+            "typecode": null,
+            "category": "other_mode_s",
+            "format_valid": true,
+            "crc_ok": null,
+            "count": 13229
+          },
+          {
+            "df": 17,
+            "typecode": 0,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 13
+          },
+          {
+            "df": 17,
+            "typecode": 1,
+            "category": "identification",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 1
+          },
+          {
+            "df": 17,
+            "typecode": 2,
+            "category": "identification",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 3
+          },
+          {
+            "df": 17,
+            "typecode": 3,
+            "category": "identification",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 6
+          },
+          {
+            "df": 17,
+            "typecode": 4,
+            "category": "identification",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 134
+          },
+          {
+            "df": 17,
+            "typecode": 4,
+            "category": "identification",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 7910
+          },
+          {
+            "df": 17,
+            "typecode": 6,
+            "category": "surface_position",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 11
+          },
+          {
+            "df": 17,
+            "typecode": 7,
+            "category": "surface_position",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 122
+          },
+          {
+            "df": 17,
+            "typecode": 8,
+            "category": "surface_position",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 47
+          },
+          {
+            "df": 17,
+            "typecode": 9,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 2
+          },
+          {
+            "df": 17,
+            "typecode": 10,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 33
+          },
+          {
+            "df": 17,
+            "typecode": 10,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 2329
+          },
+          {
+            "df": 17,
+            "typecode": 11,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 65802
+          },
+          {
+            "df": 17,
+            "typecode": 11,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 1010
+          },
+          {
+            "df": 17,
+            "typecode": 12,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 6644
+          },
+          {
+            "df": 17,
+            "typecode": 12,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 177
+          },
+          {
+            "df": 17,
+            "typecode": 13,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 545
+          },
+          {
+            "df": 17,
+            "typecode": 13,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 7
+          },
+          {
+            "df": 17,
+            "typecode": 14,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 1
+          },
+          {
+            "df": 17,
+            "typecode": 15,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 48
+          },
+          {
+            "df": 17,
+            "typecode": 15,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 1
+          },
+          {
+            "df": 17,
+            "typecode": 17,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 1
+          },
+          {
+            "df": 17,
+            "typecode": 18,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 114
+          },
+          {
+            "df": 17,
+            "typecode": 18,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 3980
+          },
+          {
+            "df": 17,
+            "typecode": 19,
+            "category": "velocity",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 1371
+          },
+          {
+            "df": 17,
+            "typecode": 19,
+            "category": "velocity",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 78779
+          },
+          {
+            "df": 17,
+            "typecode": 23,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 212
+          },
+          {
+            "df": 17,
+            "typecode": 23,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 3
+          },
+          {
+            "df": 17,
+            "typecode": 25,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 1
+          },
+          {
+            "df": 17,
+            "typecode": 26,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 1
+          },
+          {
+            "df": 17,
+            "typecode": 27,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 5
+          },
+          {
+            "df": 17,
+            "typecode": 28,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 1345
+          },
+          {
+            "df": 17,
+            "typecode": 28,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 18
+          },
+          {
+            "df": 17,
+            "typecode": 29,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 6529
+          },
+          {
+            "df": 17,
+            "typecode": 29,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 114
+          },
+          {
+            "df": 17,
+            "typecode": 31,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 3849
+          },
+          {
+            "df": 17,
+            "typecode": 31,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 61
+          },
+          {
+            "df": 18,
+            "typecode": 0,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 2
+          },
+          {
+            "df": 18,
+            "typecode": 2,
+            "category": "identification",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 370
+          },
+          {
+            "df": 18,
+            "typecode": 5,
+            "category": "surface_position",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 132
+          },
+          {
+            "df": 18,
+            "typecode": 6,
+            "category": "surface_position",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 16
+          },
+          {
+            "df": 18,
+            "typecode": 7,
+            "category": "surface_position",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 37
+          },
+          {
+            "df": 18,
+            "typecode": 8,
+            "category": "surface_position",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 14
+          },
+          {
+            "df": 18,
+            "typecode": 11,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 2
+          },
+          {
+            "df": 18,
+            "typecode": 13,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 29
+          },
+          {
+            "df": 18,
+            "typecode": 18,
+            "category": "airborne_baro_position",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 808
+          },
+          {
+            "df": 18,
+            "typecode": 19,
+            "category": "velocity",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 364
+          },
+          {
+            "df": 18,
+            "typecode": 24,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 426
+          },
+          {
+            "df": 18,
+            "typecode": 24,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": false,
+            "count": 5
+          },
+          {
+            "df": 18,
+            "typecode": 30,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 1
+          },
+          {
+            "df": 18,
+            "typecode": 31,
+            "category": "other_adsb",
+            "format_valid": true,
+            "crc_ok": true,
+            "count": 4
+          },
+          {
+            "df": 19,
+            "typecode": null,
+            "category": "other_mode_s",
+            "format_valid": true,
+            "crc_ok": null,
+            "count": 1515
+          },
+          {
+            "df": 20,
+            "typecode": null,
+            "category": "other_mode_s",
+            "format_valid": true,
+            "crc_ok": null,
+            "count": 127038
+          },
+          {
+            "df": 21,
+            "typecode": null,
+            "category": "other_mode_s",
+            "format_valid": true,
+            "crc_ok": null,
+            "count": 58373
+          },
+          {
+            "df": 24,
+            "typecode": null,
+            "category": "other_mode_s",
+            "format_valid": true,
+            "crc_ok": null,
+            "count": 16
+          }
+        ],
+        "unique_df17_aircraft": 1896,
+        "unique_payloads": 239982,
+        "time_ranges": {
+          "timeAtServer_min": 1483977600,
+          "timeAtServer_max": 1483977614.815,
+          "timeAtSensor_min": 0,
+          "timeAtSensor_max": 261121,
+          "timestamp_min": 0,
+          "timestamp_max": 1073738846
+        },
+        "file_order_regressions": 0,
+        "clock_differences": [
+          {
+            "sensorType": "SBS-3",
+            "comparable_rows": 0,
+            "min": null,
+            "max": null,
+            "p01_p50_p99": null
+          },
+          {
+            "sensorType": "dump1090",
+            "comparable_rows": 726111,
+            "min": 1483716479.076,
+            "max": 1483977614.766,
+            "p01_p50_p99": [
+              1483764360.108,
+              1483969361.132,
+              1483977596.743
+            ]
+          },
+          {
+            "sensorType": "OpenSky",
+            "comparable_rows": 305014,
+            "min": 1483899547.013,
+            "max": 1483977385.137,
+            "p01_p50_p99": [
+              1483899547.262,
+              1483951886.389,
+              1483977384.81
+            ]
+          },
+          {
+            "sensorType": "Radarcape",
+            "comparable_rows": 86138,
+            "min": 1483919998.986,
+            "max": 1483974673.04,
+            "p01_p50_p99": [
+              1483919999.097,
+              1483919999.893,
+              1483920001.912
+            ]
+          }
+        ],
+        "duplication": [
+          {
+            "candidate_groups": 913715,
+            "repeated_groups": 133242,
+            "multi_sensor_groups": 13823,
+            "multi_sensor_receptions": 35557,
+            "groups_with_repeated_sensor": 123217,
+            "chained_groups_exceeding_threshold": 2933,
+            "max_group_span_seconds": 0.0029997825622558594,
+            "gap_threshold_seconds": 0.001
+          },
+          {
+            "candidate_groups": 770292,
+            "repeated_groups": 171885,
+            "multi_sensor_groups": 73076,
+            "multi_sensor_receptions": 240049,
+            "groups_with_repeated_sensor": 119609,
+            "chained_groups_exceeding_threshold": 16875,
+            "max_group_span_seconds": 0.19099998474121094,
+            "gap_threshold_seconds": 0.01
+          },
+          {
+            "candidate_groups": 546204,
+            "repeated_groups": 171653,
+            "multi_sensor_groups": 107273,
+            "multi_sensor_receptions": 548354,
+            "groups_with_repeated_sensor": 101574,
+            "chained_groups_exceeding_threshold": 26743,
+            "max_group_span_seconds": 1.6489999294281006,
+            "gap_threshold_seconds": 0.1
+          }
+        ],
+        "baro_position_receptions": 79348,
+        "baro_position_aircraft": 1758,
+        "baro_position_parity": [
+          {
+            "odd": 0,
+            "count": 39986
+          },
+          {
+            "odd": 1,
+            "count": 39362
+          }
+        ],
+        "wall_seconds": 41.87297928800035,
+        "receiver_count": 211
+      },
+      "quality-checks": {
+        "crc_by_receiver": [
+          {
+            "sensorType": "OpenSky",
+            "df": 17,
+            "crc_ok": true,
+            "zero_parity": false,
+            "count": 44252
+          },
+          {
+            "sensorType": "OpenSky",
+            "df": 18,
+            "crc_ok": true,
+            "zero_parity": false,
+            "count": 467
+          },
+          {
+            "sensorType": "Radarcape",
+            "df": 17,
+            "crc_ok": true,
+            "zero_parity": false,
+            "count": 18130
+          },
+          {
+            "sensorType": "Radarcape",
+            "df": 18,
+            "crc_ok": true,
+            "zero_parity": false,
+            "count": 315
+          },
+          {
+            "sensorType": "SBS-3",
+            "df": 17,
+            "crc_ok": false,
+            "zero_parity": true,
+            "count": 2887
+          },
+          {
+            "sensorType": "SBS-3",
+            "df": 18,
+            "crc_ok": false,
+            "zero_parity": true,
+            "count": 5
+          },
+          {
+            "sensorType": "dump1090",
+            "df": 17,
+            "crc_ok": false,
+            "zero_parity": false,
+            "count": 174
+          },
+          {
+            "sensorType": "dump1090",
+            "df": 17,
+            "crc_ok": true,
+            "zero_parity": false,
+            "count": 115786
+          },
+          {
+            "sensorType": "dump1090",
+            "df": 18,
+            "crc_ok": true,
+            "zero_parity": false,
+            "count": 1423
+          }
+        ],
+        "receiver_clock_diagnostics": [
+          {
+            "sensorType": "dump1090",
+            "rows": 726111,
+            "sensor_clock_min": 0,
+            "sensor_clock_max": 261121,
+            "sensor_clock_zero": 7141,
+            "counter_regressions": 345687,
+            "sensor_clock_regressions": 5904
+          },
+          {
+            "sensorType": "OpenSky",
+            "rows": 305014,
+            "sensor_clock_min": 215,
+            "sensor_clock_max": 78067,
+            "sensor_clock_zero": 0,
+            "counter_regressions": 141118,
+            "sensor_clock_regressions": 1304
+          },
+          {
+            "sensorType": "Radarcape",
+            "rows": 86138,
+            "sensor_clock_min": 2927,
+            "sensor_clock_max": 57615,
+            "sensor_clock_zero": 0,
+            "counter_regressions": 39055,
+            "sensor_clock_regressions": 945
+          },
+          {
+            "sensorType": "SBS-3",
+            "rows": 9987,
+            "sensor_clock_min": null,
+            "sensor_clock_max": null,
+            "sensor_clock_zero": null,
+            "counter_regressions": 70,
+            "sensor_clock_regressions": null
+          }
+        ],
+        "df17_grouping_with_zero_parity_marked_unverified": {
+          "wire_payload": {
+            "candidate_groups": 152091,
+            "repeated_groups": 17305,
+            "multi_sensor_groups": 13699,
+            "multi_sensor_receptions": 35035,
+            "groups_with_repeated_sensor": 3858,
+            "chained_groups_exceeding_threshold": 2813,
+            "max_group_span_seconds": 0.07299995422363281,
+            "gap_threshold_seconds": 0.01
+          },
+          "payload_without_parity": {
+            "candidate_groups": 151921,
+            "repeated_groups": 17457,
+            "multi_sensor_groups": 13852,
+            "multi_sensor_receptions": 35359,
+            "groups_with_repeated_sensor": 3858,
+            "chained_groups_exceeding_threshold": 2821,
+            "max_group_span_seconds": 0.07299995422363281,
+            "gap_threshold_seconds": 0.01
+          }
+        },
+        "crc_caution": "SBS-3 zero-parity records are unverified under transmitted-message CRC, not demonstrated corrupt; other DFs have different parity semantics"
+      },
+      "reconstruction": {
+        "input_position_receptions": 79348,
+        "exact_unique_events": 78503,
+        "policy": "Most recent preceding opposite parity per ICAO in (server time, record index) order; <=10s; DF17 TC9-18; no fallback after zone mismatch",
+        "status_counts": {
+          "zone_mismatch": 79,
+          "expired_pair": 22,
+          "no_prior_opposite": 4501,
+          "decoded": 73850,
+          "invalid_decoded_coordinate": 51
+        },
+        "decoder_reference": "pyModeS 2.21.1 airborne_position",
+        "independent_pairing_mismatches": 0,
+        "coordinate_agreement": {
+          "max_latitude_error_degrees": 0,
+          "max_longitude_error_degrees": 0,
+          "aircraft_with_decoded_positions": 1622
+        },
+        "equal_timestamp_pairs": 2203,
+        "published_known_answer": [
+          52.2572021484375,
+          3.91937255859375
+        ],
+        "wall_seconds": 17.791739178999705,
+        "validation_passed": true
+      }
+    }
+  },
+  "versions": {
+    "pyModeS": "2.21.1",
+    "fastavro": "1.12.1",
+    "numpy": "1.26.4",
+    "pandas": "2.2.3",
+    "pyarrow": "14.0.2"
+  },
+  "runtime": {
+    "spark": "3.5.7",
+    "master": "local[2]",
+    "driver_memory": "1g",
+    "container_memory_limit_bytes": 1342177280
+  },
+  "streaming": {
+    "selected_real_events": 240,
+    "expected_decoded_pairs": 408,
+    "batch_matches_independent_enumeration": true,
+    "semantics": "All same-aircraft opposite-parity pairs within +/-10s that pyModeS accepts; not latest-only selection or transmission deduplication",
+    "faults": "Delivery order and duplicate copies are injected; messages, IDs and source times remain real",
+    "limits": "File source, Parquet sink, local[2]; graceful restart only; no Kafka, MongoDB, crash injection, field fusion, or canonical state publication",
+    "scenarios": [
+      {
+        "name": "ordered",
+        "delivered_rows": 240,
+        "output_rows": 408,
+        "unique_decoded_pairs": 408,
+        "missing_pairs": 0,
+        "unexpected_pairs": 0,
+        "max_state_rows": 94,
+        "max_state_memory_bytes": 39072,
+        "rows_dropped_by_watermark": 0,
+        "rows_removed_from_state": 206,
+        "watermarks": [
+          "1970-01-01T00:00:00.000Z",
+          "2015-04-21T12:00:46.172Z",
+          "2015-04-21T12:00:46.172Z",
+          "2015-04-21T12:02:04.936Z",
+          "2015-04-21T12:02:04.936Z",
+          "2015-04-21T12:03:17.765Z",
+          "2015-04-21T12:03:17.765Z",
+          "2015-04-21T12:04:30.592Z"
+        ],
+        "wall_seconds": 9.571698232000017,
+        "restart": null
+      },
+      {
+        "name": "within_watermark_reordering",
+        "delivered_rows": 240,
+        "output_rows": 408,
+        "unique_decoded_pairs": 408,
+        "missing_pairs": 0,
+        "unexpected_pairs": 0,
+        "max_state_rows": 96,
+        "max_state_memory_bytes": 38952,
+        "rows_dropped_by_watermark": 0,
+        "rows_removed_from_state": 206,
+        "watermarks": [
+          "1970-01-01T00:00:00.000Z",
+          "2015-04-21T12:00:43.972Z",
+          "2015-04-21T12:00:43.972Z",
+          "2015-04-21T12:01:58.469Z",
+          "2015-04-21T12:01:58.469Z",
+          "2015-04-21T12:03:15.533Z",
+          "2015-04-21T12:03:15.533Z",
+          "2015-04-21T12:04:28.111Z",
+          "2015-04-21T12:04:28.111Z",
+          "2015-04-21T12:04:30.592Z"
+        ],
+        "wall_seconds": 5.814864553000007,
+        "restart": null
+      },
+      {
+        "name": "duplicate_delivery",
+        "delivered_rows": 300,
+        "output_rows": 528,
+        "unique_decoded_pairs": 408,
+        "missing_pairs": 0,
+        "unexpected_pairs": 0,
+        "max_state_rows": 119,
+        "max_state_memory_bytes": 45992,
+        "rows_dropped_by_watermark": 33,
+        "rows_removed_from_state": 233,
+        "watermarks": [
+          "1970-01-01T00:00:00.000Z",
+          "2015-04-21T12:00:46.172Z",
+          "2015-04-21T12:00:46.172Z",
+          "2015-04-21T12:00:46.172Z",
+          "2015-04-21T12:02:04.936Z",
+          "2015-04-21T12:02:04.936Z",
+          "2015-04-21T12:03:17.765Z",
+          "2015-04-21T12:03:17.765Z",
+          "2015-04-21T12:04:30.592Z"
+        ],
+        "wall_seconds": 4.429642701000375,
+        "restart": null
+      },
+      {
+        "name": "checkpoint_restart",
+        "delivered_rows": 240,
+        "output_rows": 408,
+        "unique_decoded_pairs": 408,
+        "missing_pairs": 0,
+        "unexpected_pairs": 0,
+        "max_state_rows": 94,
+        "max_state_memory_bytes": 39072,
+        "rows_dropped_by_watermark": 0,
+        "rows_removed_from_state": 206,
+        "watermarks": [
+          "1970-01-01T00:00:00.000Z",
+          "2015-04-21T12:00:46.172Z",
+          "2015-04-21T12:00:46.172Z",
+          "2015-04-21T12:02:04.936Z",
+          "2015-04-21T12:02:04.936Z",
+          "2015-04-21T12:03:17.765Z",
+          "2015-04-21T12:03:17.765Z",
+          "2015-04-21T12:04:30.592Z"
+        ],
+        "wall_seconds": 4.191323246000138,
+        "restart": "graceful stop/restart using the same checkpoint"
+      },
+      {
+        "name": "late_first_chunk",
+        "delivered_rows": 240,
+        "output_rows": 313,
+        "unique_decoded_pairs": 313,
+        "missing_pairs": 95,
+        "unexpected_pairs": 0,
+        "max_state_rows": 94,
+        "max_state_memory_bytes": 39072,
+        "rows_dropped_by_watermark": 60,
+        "rows_removed_from_state": 146,
+        "watermarks": [
+          "1970-01-01T00:00:00.000Z",
+          "2015-04-21T12:02:04.936Z",
+          "2015-04-21T12:02:04.936Z",
+          "2015-04-21T12:03:17.765Z",
+          "2015-04-21T12:03:17.765Z",
+          "2015-04-21T12:04:30.592Z",
+          "2015-04-21T12:04:30.592Z"
+        ],
+        "wall_seconds": 3.583301950000532,
+        "restart": null
+      }
+    ]
+  },
+  "spark_event_metrics": [
+    {
+      "event_log": "local-1793032205504",
+      "tasks": 99,
+      "executor_run_time_ms": 20297,
+      "shuffle_write_bytes": 34014199,
+      "shuffle_read_bytes": 34016192,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "max_task_peak_execution_memory_bytes": 33554432,
+      "application": "raw-adsb-feasibility-profile"
+    },
+    {
+      "event_log": "local-1793033383892",
+      "tasks": 39,
+      "executor_run_time_ms": 8127,
+      "shuffle_write_bytes": 10137576,
+      "shuffle_read_bytes": 12101248,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "max_task_peak_execution_memory_bytes": 10485760,
+      "application": "raw-adsb-batch-reconstruction"
+    },
+    {
+      "event_log": "local-1793033383900",
+      "tasks": 99,
+      "executor_run_time_ms": 57379,
+      "shuffle_write_bytes": 94706363,
+      "shuffle_read_bytes": 94716722,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "max_task_peak_execution_memory_bytes": 100663296,
+      "application": "raw-adsb-feasibility-profile"
+    },
+    {
+      "event_log": "local-1793033995405",
+      "tasks": 149,
+      "executor_run_time_ms": 22709,
+      "shuffle_write_bytes": 64921,
+      "shuffle_read_bytes": 64921,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "max_task_peak_execution_memory_bytes": 8392704,
+      "application": "raw-adsb-stateful-feasibility"
+    },
+    {
+      "event_log": "local-1793033996180",
+      "tasks": 48,
+      "executor_run_time_ms": 12259,
+      "shuffle_write_bytes": 16553646,
+      "shuffle_read_bytes": 19767800,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "max_task_peak_execution_memory_bytes": 17301504,
+      "application": "raw-adsb-batch-reconstruction"
+    },
+    {
+      "event_log": "local-1793034184378",
+      "tasks": 52,
+      "executor_run_time_ms": 11077,
+      "shuffle_write_bytes": 16548916,
+      "shuffle_read_bytes": 19763070,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "max_task_peak_execution_memory_bytes": 17301504,
+      "application": "raw-adsb-batch-reconstruction"
+    },
+    {
+      "event_log": "local-1793034184397",
+      "tasks": 87,
+      "executor_run_time_ms": 33572,
+      "shuffle_write_bytes": 46084632,
+      "shuffle_read_bytes": 46085645,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "max_task_peak_execution_memory_bytes": 58982400,
+      "application": "raw-adsb-quality-diagnostics"
+    },
+    {
+      "event_log": "local-1793034325660",
+      "tasks": 48,
+      "executor_run_time_ms": 10404,
+      "shuffle_write_bytes": 14605530,
+      "shuffle_read_bytes": 16569202,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "max_task_peak_execution_memory_bytes": 10485760,
+      "application": "raw-adsb-batch-reconstruction"
+    },
+    {
+      "event_log": "local-1793034325667",
+      "tasks": 60,
+      "executor_run_time_ms": 15006,
+      "shuffle_write_bytes": 23773425,
+      "shuffle_read_bytes": 26987579,
+      "memory_spilled_bytes": 0,
+      "disk_spilled_bytes": 0,
+      "max_task_peak_execution_memory_bytes": 17301504,
+      "application": "raw-adsb-batch-reconstruction"
+    }
+  ],
+  "measurement_limits": "Single local runs, some concurrent; task metrics are not process RSS or a scaling comparison. Native Spark stateful join probe, not complete aircraft-state reconstruction.",
+  "experiment_source_sha256": {
+    "spark_profile.py": "aed0799bea3c7fab4988faf4e0cbe1a56659d57dc002dcb526b3f3601ed9d27f",
+    "stream_probe.py": "86ff72aa94527d4c32955410ecab3b647b90475412cb840014c96a500b977d7a",
+    "acquire.py": "70c6c00b916672f6f093a43ae3cf75f37c814b62b60983373e3a88ed764efd7b",
+    "probe_archive.py": "c0179d1168afbcb5e7031afa75b984bdb70d0732480a5b57ff682365d50cf376",
+    "test_reconstruction.py": "00443593ad8e3de6a0833c720533801c44d05eedd86b7e0f2c05d2d8c66940db",
+    "reconstruct.py": "c16a65d01ffe506243c3fcce22e515c27d56757e4b732338a8eab7daac42a0c8",
+    "__init__.py": "206d5fe502b6935a71a65505bb9de155d313651dd9fdd3299ce996dbf16edffb",
+    "quality_checks.py": "7f7cb0a106e772350f085255578eff31498dd73c6cbc7152e8062ed5adb2a908",
+    "messages.py": "f18ea2316e3245ae3563b653c79e27789b1f6ec715c14d1d63338a6755e68b0c",
+    "cpr_reference.py": "24b3dafbd78d47de62295282418c8097c15691eb279dc3b00cc2cd6d19f99f55",
+    "summarize.py": "77a2b7bc72a8a392036e7ecfbc4ff313a6575d1051ab06a48aa4d304c163026a"
+  }
+}

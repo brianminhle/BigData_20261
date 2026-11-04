@@ -5,10 +5,10 @@ import json
 import unittest
 from unittest.mock import Mock
 
-from scripts.historical import normalize_historical
-from scripts.kafka_sink import publish_records, record_key
-from scripts.observations import SourceReference
-from scripts.sample_io import FIELDS
+from airtraffic.historical import normalize_historical
+from airtraffic.kafka_sink import publish_records, record_key
+from airtraffic.observations import SourceReference
+from airtraffic.sample_io import FIELDS
 
 
 class PublicationTests(unittest.TestCase):

@@ -93,9 +93,9 @@ class BatchStorageTests(unittest.TestCase):
         from jobs.archive_schema import archive_rows
         from jobs.inspect_batch import inspect_batch
         from jobs.materialize_analytics import materialize
-        from scripts.historical import normalize_historical
-        from scripts.observations import SourceReference
-        from scripts.sample_io import ROOT
+        from airtraffic.historical import normalize_historical
+        from airtraffic.observations import SourceReference
+        from airtraffic.sample_io import ROOT
         import csv
         payloads = []
         with (ROOT / "data/fixtures/checkpoint_states.csv").open() as source:

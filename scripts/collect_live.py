@@ -7,10 +7,10 @@ from pathlib import Path
 import sys
 from uuid import uuid4
 
-from .kafka_sink import create_producer
-from .live_collector import collect_session
-from .live_config import LiveConfig
-from .sample_io import ROOT
+from airtraffic.kafka_sink import create_producer
+from airtraffic.live_collector import collect_session
+from airtraffic.live_config import LiveConfig
+from airtraffic.sample_io import ROOT
 
 
 def parse_args(argv=None):

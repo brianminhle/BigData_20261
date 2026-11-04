@@ -41,7 +41,7 @@ class LiveConfig:
     @property
     def url(self):
         return "https://opensky-network.org/api/states/all?" + urlencode(
-            dict(zip(("lamin", "lomin", "lamax", "lomax"), self.bounds))
+            dict(zip(("lamin", "lomin", "lamax", "lomax"), (format(value, ".15g") for value in self.bounds)))
         )
 
     @property

@@ -15,6 +15,7 @@ x-spark: &spark
     dockerfile: deploy/spark/Dockerfile
   volumes:
     - ./scripts:/workspace/scripts:ro
+    - ./airtraffic:/workspace/airtraffic:ro
     - ./jobs:/workspace/jobs:ro
     - ./tests:/workspace/tests:ro
     - ./data:/workspace/data:ro
@@ -61,6 +62,11 @@ services:
     entrypoint: [/opt/kafka/bin/kafka-topics.sh]
     command: [--bootstrap-server, kafka:9092, --create, --if-not-exists, --topic, airtraffic.replay.v1, --partitions, "3", --replication-factor, "1", --config, retention.ms=604800000]
     mem_limit: 512m
+
+  raw-topic-init:
+    <<: *topic-init
+    profiles: [raw, tools]
+    command: [--bootstrap-server, kafka:9092, --create, --if-not-exists, --topic, airtraffic.raw.replay.v1, --partitions, "3", --replication-factor, "1", --config, retention.ms=604800000]
 
   live-topic-init:
     <<: *topic-init
@@ -113,6 +119,19 @@ services:
       - "127.0.0.1:4040:4040"
     stop_grace_period: 45s
 
+  raw-archive:
+    <<: *archive
+    profiles: [raw]
+    hostname: raw-archive
+    depends_on:
+      raw-topic-init: {condition: service_completed_successfully}
+      namenode: {condition: service_healthy}
+      datanode-1: {condition: service_started}
+      datanode-2: {condition: service_started}
+    command: [/opt/spark/bin/spark-submit, --master, "local[2]", --driver-memory, 1g, --conf, spark.jars.ivy=/opt/spark/ivy, --conf, spark.jars.ivySettings=/opt/spark/ivysettings.xml, --packages, "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.7", jobs/archive_stream.py, --raw-adsb, --topic, airtraffic.raw.replay.v1, --output, "hdfs://namenode:9000/airtraffic/bronze/raw-adsb-v1", --checkpoint, "hdfs://namenode:9000/airtraffic/checkpoints/archive-raw-adsb-v1"]
+    ports:
+      - "127.0.0.1:4042:4040"
+
   live-archive:
     <<: *archive
     profiles: [live]
@@ -138,6 +157,7 @@ services:
       OPENSKY_ACCESS_TOKEN: "${OPENSKY_ACCESS_TOKEN:-}"
     volumes:
       - ./scripts:/workspace/scripts:ro
+      - ./airtraffic:/workspace/airtraffic:ro
       - ./data/reports:/workspace/data/reports
     mem_limit: 512m
 

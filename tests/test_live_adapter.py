@@ -5,10 +5,10 @@ import hashlib
 import json
 import unittest
 
-from scripts.live_adapter import normalize_response
-from scripts.live_config import LiveConfig
-from scripts.observations import RejectedObservation
-from scripts.sample_io import ROOT
+from airtraffic.live_adapter import normalize_response
+from airtraffic.live_config import LiveConfig
+from airtraffic.observations import RejectedObservation
+from airtraffic.sample_io import ROOT
 
 FIXTURE = (ROOT / "data/fixtures/live_states.json").read_bytes()
 

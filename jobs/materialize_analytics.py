@@ -1,4 +1,4 @@
-"""Save verified traffic and trajectory Parquet datasets for one replay run."""
+"""Save verified traffic and trajectory Parquet datasets for one archived run."""
 
 import argparse
 import json

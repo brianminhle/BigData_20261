@@ -12,12 +12,11 @@ from pathlib import Path
 import re
 import sys
 
-if __package__:
-    from .sample_io import DEFAULT_MANIFEST, FIELDS, SampleError, iter_rows, read_json, verified_source, write_json
-    from .sample_values import BOOLEANS, NULLS, NUMERIC, numeric_value
-else:
-    from sample_io import DEFAULT_MANIFEST, FIELDS, SampleError, iter_rows, read_json, verified_source, write_json
-    from sample_values import BOOLEANS, NULLS, NUMERIC, numeric_value
+if not __package__:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from airtraffic.sample_io import DEFAULT_MANIFEST, FIELDS, SampleError, iter_rows, read_json, verified_source, write_json
+from airtraffic.sample_values import BOOLEANS, NULLS, NUMERIC, numeric_value
 
 
 def utc(timestamp: float | None) -> str | None:

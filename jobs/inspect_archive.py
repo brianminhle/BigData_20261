@@ -6,6 +6,17 @@ import json
 from pyspark.sql import SparkSession, functions as F
 
 
+def summarize_raw(rows):
+    return rows.agg(
+        F.count("*").alias("rows"),
+        F.countDistinct(F.struct("topic", "partition", "offset")).alias("unique_kafka_offsets"),
+        F.countDistinct("envelope.reception_id").alias("unique_receptions"),
+        F.countDistinct("envelope.delivery_id").alias("unique_deliveries"),
+        F.min("envelope.event_time").alias("first_event_time"),
+        F.max("envelope.event_time").alias("last_event_time"),
+    ).first().asDict()
+
+
 def summarize(rows):
     summary = rows.agg(
         F.count("*").alias("rows"),
@@ -31,6 +42,7 @@ def main():
     parser.add_argument("--path", default="hdfs://namenode:9000/airtraffic/bronze/replay-v1")
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--expect-rows", type=int)
+    parser.add_argument("--raw-adsb", action="store_true")
     args = parser.parse_args()
     spark = (SparkSession.builder.appName("airtraffic-archive-check")
              .config("spark.sql.session.timeZone", "UTC")
@@ -39,7 +51,7 @@ def main():
     try:
         # Read the root so Spark honors the file sink's committed-file metadata.
         rows = spark.read.parquet(args.path).where(F.col("envelope.run_id") == args.run_id).cache()
-        summary = {"run_id": args.run_id, **summarize(rows)}
+        summary = {"run_id": args.run_id, **(summarize_raw(rows) if args.raw_adsb else summarize(rows))}
         print(json.dumps(summary, sort_keys=True))
         if args.expect_rows is not None and summary["rows"] != args.expect_rows:
             raise ValueError(f"Expected {args.expect_rows} rows, found {summary['rows']}")

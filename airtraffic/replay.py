@@ -8,9 +8,21 @@ import time
 
 from .historical import normalize_historical
 from .observations import Observation, RejectedObservation, SourceReference
+from .sample_io import SampleError
 from .sample_values import numeric_value
 
 SourceRow = tuple[str, int, dict]
+
+
+def validate_replay_settings(max_rows: int, events_per_second: float, stale_seconds: float, run_id: str) -> None:
+    if not 1 <= max_rows <= 100000:
+        raise SampleError("--max-rows must be between 1 and 100000 for this in-memory prototype")
+    if not math.isfinite(events_per_second) or events_per_second <= 0:
+        raise SampleError("--events-per-second must be finite and positive")
+    if not math.isfinite(stale_seconds) or stale_seconds < 0:
+        raise SampleError("--stale-seconds must be finite and nonnegative")
+    if not run_id.strip():
+        raise SampleError("--run-id must not be blank")
 
 
 def replay_order(record: SourceRow) -> tuple:

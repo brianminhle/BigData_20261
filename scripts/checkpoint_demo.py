@@ -9,9 +9,9 @@ import re
 import sys
 from uuid import uuid4
 
-from .demo_runtime import DemoError, checked_compose, result_json, wait_for_archive
+from airtraffic.demo_runtime import DemoError, checked_compose, result_json, wait_for_archive
 from .profile_sample import profile_manifest
-from .sample_io import ROOT, read_json, write_json
+from airtraffic.sample_io import ROOT, read_json, write_json
 
 FIXTURE = ROOT / "data/fixtures/checkpoint_manifest.json"
 

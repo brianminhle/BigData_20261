@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 from scripts.download_sample import download
 from scripts.profile_sample import profile, profile_manifest
-from scripts.sample_io import FIELDS, SampleError, inspect_header, iter_rows, write_json
+from airtraffic.sample_io import FIELDS, SampleError, inspect_header, iter_rows, write_json
 
 
 def observation(**changes):

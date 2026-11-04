@@ -1,4 +1,4 @@
-"""Batch traffic and trajectory summaries from committed replay archive rows."""
+"""Batch traffic and trajectory summaries from committed observation archives."""
 
 from pyspark.sql import Window, functions as F
 

@@ -7,10 +7,10 @@ import unittest
 from unittest.mock import Mock
 from urllib.error import URLError
 
-from scripts.live_collector import collect_session
-from scripts.live_config import LiveConfig
-from scripts.opensky_http import SnapshotResponse
-from scripts.sample_io import ROOT
+from airtraffic.live_collector import collect_session
+from airtraffic.live_config import LiveConfig
+from airtraffic.opensky_http import SnapshotResponse
+from airtraffic.sample_io import ROOT
 
 FIXTURE = (ROOT / "data/fixtures/live_states.json").read_bytes()
 
