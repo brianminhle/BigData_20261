@@ -1,9 +1,0 @@
-{
-  "manifest_version": 1,
-  "dataset_id": "synthetic_checkpoint_states_v1",
-  "provider": "Synthetic OpenSky-shaped fixture",
-  "source_url": "fixture://checkpoint_states.csv",
-  "local_path": "checkpoint_states.csv",
-  "bytes": 1089,
-  "sha256": "94719524baa08dfff11aeb9acb0918c5c9179098800ffbec780447ac79734b08"
-}

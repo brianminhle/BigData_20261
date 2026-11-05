@@ -18,25 +18,6 @@
   "unique_reception_ids": 1100,
   "recovery": "SIGKILL archive after first 1000 committed; publish duplicate 1000 and next 100 while stopped; resume same checkpoint",
   "source_fields_verified": "All 2100 rows compared with original Avro record by source record index; exact rawMessage, all metadata, source clocks, file hash and reception ID",
-  "fixture_checks": [
-    "nullable Avro metadata",
-    "invalid and empty raw message preservation",
-    "stable reception IDs and distinct delivery IDs",
-    "checksum mismatch rejected",
-    "Spark preserves duplicates and malformed envelope bytes"
-  ],
-  "regression_tests": {
-    "run": 82,
-    "skipped": 0,
-    "failed": 0
-  },
-  "legacy_checkpoint": {
-    "run_id": "checkpoint-109b69e145e9",
-    "archived_rows": 10,
-    "eligible_positions": 3,
-    "traffic_rows": 2,
-    "trajectory_rows": 2
-  },
   "limits": [
     "bounded source prefix; not full dataset replay",
     "single-host Compose deployment",

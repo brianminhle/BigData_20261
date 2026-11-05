@@ -1,14 +1,14 @@
 # Project Plan — Raw ADS-B Air Traffic Reconstruction & Analytics
 
-**Updated:** 4 November 2026
+**Updated:** 5 November 2026
 
 **Active direction:** **Raw-first Lambda Architecture** using historical Raw Mode S/ADS-B messages for **both Spark Streaming (Kafka replay) and Spark Batch (HDFS reprocessing)**.
 
-**Implementation status:** S5 raw Avro → Kafka → Spark → HDFS Bronze is verified locally on a bounded real sample (4 November 2026). S6–S11 remain planned. The October 26 State Vector checkpoint is retained in [checkpoint-guide.md](checkpoint-guide.md).
+**Implementation status:** S5 raw ingestion and S6 Bronze → Spark Batch → Silver are verified locally, including the complete 304,131-reception OpenSky 2015 sample (5 November 2026). S7 is locally verified with application-managed streaming state; S8–S11 remain planned. The former S1–S4 State Vector prototype is preserved in Git history but removed from the active working tree.
 
 > **One-sentence project goal:** Build a replay-based air-traffic analytics platform that reconstructs observed aircraft positions from raw ADS-B receptions, delivers fast *provisional* traffic information, and recomputes/republishes affected history when late or conflicting input changes the result.
 
-**Next milestone: S6 — define and implement canonical batch preprocessing/reconstruction.** S5 evidence is recorded in [s5_raw_20261104.json](../data/verification/s5_raw_20261104.json); runnable ingestion commands are in the [README](../README.md#raw-ads-b-ingestion-s5).
+**Next milestone: S8 — serving the verified canonical outputs.** S5 evidence is recorded in [s5_raw_20261104.json](../data/verification/s5_raw_20261104.json); runnable ingestion commands are in the [README](../README.md#run-s5).
 
 ## 1. What the system will actually deliver
 
@@ -40,7 +40,7 @@ This is a **historical replay and data-quality analytics platform**, not a globa
 - **Streaming path:** timestamp-controlled **historical replay → Kafka → Spark Structured Streaming** for stateful decoding/reconstruction and provisional serving.
 - **Batch path:** **all retained raw receptions in HDFS Bronze → Spark batch** for canonical reconstruction, historical analytics and correction of a fixed, versioned input snapshot.
 - **Reference data, not a second production feed:** OpenSky historical **State Vectors** when an **overlapping aircraft/time/region** reference exists; optional OurAirports snapshots for contextual spatial joins.
-- **Existing OpenSky live REST collector:** keep working code and its verified checkpoint evidence, but it is a **legacy/optional comparison demo**, **not** the primary raw source and **not** evidence of raw live streaming.
+- **Processed State Vectors:** optional external reference when coverage overlaps. The earlier REST collector is preserved in Git history and is not part of the current runtime.
 - **True live raw ADS-B:** optional extension requiring a suitable receiver/feed. **Not required** for the project to demonstrate Spark streaming; a historical replay must be clearly labeled as such.
 
 ### 2.2 Data availability and feasibility gate
@@ -51,7 +51,7 @@ This is a **historical replay and data-quality analytics platform**, not a globa
 | **2017 raw archive prefix** | 16 MiB of a larger ~3.83 GB compressed object; 1,127,250 complete receptions recovered from the prefix, covering ~14.8 seconds; reported 73,850 decoded-position outputs. | **Not** the full archive, a random sample, or proof that the full hour can be downloaded/processed on available hardware. |
 | **Exploratory streaming test** | 240 selected real events, 408 unique valid **CPR candidate pairs** in an ordered scenario; late-arrival injection yielded 313; duplicate delivery yielded 528 physical outputs but 408 unique pairs. | File source + local Spark/Parquet probe, **not** Kafka-to-MongoDB exactly-once effects; candidate pairs are not canonical positions. |
 
-These are **team-provided feasibility findings**, not completed raw integration milestones. The 2015 sample and 2017 object must be pinned with checksum, source URI, timestamp range and acquisition terms. The 2017 prefix was intentionally incomplete. Reproduce selected calculations and record decoder/code versions before using these findings as final report benchmarks.
+These are **team-provided feasibility findings** from the earlier work preserved in Git commit `3896a53`, not completed reconstruction milestones. The 2017 prefix was intentionally incomplete. Reproduce selected calculations and record decoder/code versions before using these findings as final report benchmarks.
 
 **S5 go/no-go gate:** obtain an interval of real raw data long and continuous enough for the agreed products; record bytes, event-time span, receiver count, aircraft count, eligible messages, reconstructable positions, trajectory gaps, download/storage cost and true replay rate. Choose the coverage requirement **before** claiming multi-hour trajectories, sustained traffic trends or large-scale processing. If coverage is insufficient, narrow the **historical analytics claim** and explicitly revise scope; do not silently switch the core back to State Vectors.
 
@@ -100,14 +100,14 @@ flowchart TD
 
 ## 4. One active execution roadmap
 
-**Legacy S1–S4 remain completed historical work, not Raw ADS-B milestones.** Their reusable Kafka/HDFS/batch-publishing code is a starting point. All **new** development follows **S5 → S6 → S7 → S8 → S9 → S10 → S11**.
+**S1–S4 are historical State Vector work preserved in Git history.** The active repository contains verified S5 ingestion and S6 batch preprocessing. Development continues through **S7 → S8 → S9 → S10 → S11**.
 
 | Stage | Outcome / acceptance gate | Status |
 | --- | --- | --- |
-| **S1–S4 — legacy State Vector baseline** | Verified source adapters, historical/live ingestion, Kafka → Spark → HDFS archival, saved Parquet analytics and checkpoint demo. | **Verified locally (old pipeline only)** |
-| **S5 — Raw acquisition, contracts and replay/archive** | Pinned 2015 sample; stable reception IDs; Kafka replay and HDFS raw archival; source-field verification and crash/restart accounting. | **Verified locally, bounded prefix — 4 November 2026** |
-| **S6 — Spark batch reference reconstruction** | Validated/gap-aware raw decoding, reception handling, deterministic CPR pairing, canonical positions and immutable, checked Silver outputs. | Planned |
-| **S7 — Spark streaming raw reconstruction** | Same canonical rules under replay; bounded state, late/duplicate/reorder tests, restart; measurable differences against S6. | Planned; exploratory *file-source* probe only |
+| **S1–S4 — historical State Vector work** | Earlier source adapters, demos, and batch tables. | Archived in Git history; removed from active runtime |
+| **S5 — Raw acquisition, contracts and replay/archive** | Pinned 2015 sample; stable reception IDs; Kafka replay and HDFS raw archival; source-field verification and crash/restart accounting. | **Verified locally; bounded recovery and complete sample ingestion** |
+| **S6 — Spark batch reference reconstruction** | Validated/gap-aware raw decoding, reception handling, deterministic CPR pairing, canonical positions and immutable, checked Silver outputs. | **Verified locally — 5 November 2026** |
+| **S7 — Spark streaming raw reconstruction** | Same canonical rules under replay; bounded state, late/duplicate/reorder tests, restart; measurable differences against S6. | **Verified locally — 5 November 2026; Kafka and HDFS integration** |
 | **S8 — Serving and first replay map** | Idempotent MongoDB state, FastAPI and a map driven solely by **our raw-derived canonical output**; visible simulation clock and quality. | Planned |
 | **S9 — Analytics, Lambda corrections and advanced Spark** | Trajectories, H3 traffic/coverage, quality dashboard, provisional-vs-recomputed correction demo; required Spark experiments. | Planned |
 | **S10 — Kubernetes, distributed performance and operations** | K3s multi-host distributed Spark/HDFS deployment, resource/scale/recovery/monitoring/security evidence. | Planned; feasibility work starts with S5 |
@@ -115,23 +115,55 @@ flowchart TD
 
 ### S5 — Raw data and source contract **(verified locally)**
 
-Run `s5-20261104`: 1,000 initial deliveries, SIGKILL archive, 1,000 duplicate receptions plus 100 new receptions, then resume the same checkpoint. Result: **2,100 acknowledged = 2,100 archived = 2,100 unique Kafka offsets**, representing **1,100 unique receptions**. All archived source fields were compared to Avro. All 82 existing tests passed in the Spark image; the legacy fixture integration also passed. Temporary verification code was removed. This verifies bounded ingestion and process recovery, not the full dataset or distributed host failure.
+Run `s5-20261104`: 1,000 initial deliveries, SIGKILL archive, 1,000 duplicate receptions plus 100 new receptions, then resume the same checkpoint. Result: **2,100 acknowledged = 2,100 archived = 2,100 unique Kafka offsets**, representing **1,100 unique receptions**. All archived source fields were compared to Avro. The 82 tests and legacy fixture run passed at that checkpoint; their code is now in Git history. This verifies bounded ingestion and process recovery. Coverage for sustained trajectories and distributed host failure remains unverified.
 
 - Acquire and pin raw Avro files/chunks; document URL, SHA-256, format/schema, licensing/usage constraints, compressed/decompressed size, time range and holes. Do not assume a partial HTTP range equals the whole file.
 - Preserve source fields, receiver metadata, timestamp bases, nulls and repeated payloads; verify source-to-archive equality. DF/type-code classification, parity validation and CPR opportunity profiling belong to S6. Receiver-local timestamp fields are retained without assuming a global clock.
 - Define stable `dataset_id`, `reception_id`, `run_id`, delivery ID, event-time selection and invalid/unresolved categories. Decide how a replay's simulation clock and seeded late/duplicate delivery faults are recorded.
-- Implement a **new raw replay topic** and append-only Spark/HDFS Bronze writer, reusing existing Kafka/Spark infrastructure without letting raw and State Vector envelopes share semantics or checkpoints.
+- Implement a **new raw replay topic** and append-only Spark/HDFS Bronze writer, using the dedicated raw topic, schema, storage path, and checkpoint.
 - **Exit:** a repeatable command ingests **real raw messages** from a known interval, archives all acknowledged deliveries, validates offsets/counts and resumes after restart. Source coverage supports the next chosen experiments.
 
-### S6 — Batch reconstruction as the correctness reference
+### S6 — Batch reconstruction as the correctness reference **(verified locally)**
 
-- Implement Spark parsing/receiver-aware validation, eligible frame filtering, candidate reception grouping (without unjustified destructive dedup), deterministic CPR even/odd matching, pyModeS-assisted decode verification and canonical output rules.
-- Distinguish **position event**, **CPR pair** and **canonical position**. Assemble velocity, altitude and identification only with explicit per-field observation timestamps/availability; no invented attributes.
-- Build small independent reference fixtures for tie cases, zone mismatch, expired/no-opposite CPR, invalid frame, multisensor candidates and out-of-order input. Profile output completeness and gap distribution for the real interval.
-- Save immutable versioned Silver (canonical positions, rejects/quality, provenance) and Gold-ready records in HDFS. Check schema/count/value invariants and `input_snapshot_id` before publishing completion.
-- **Exit:** reproducible real-data decoded positions and independently checked canonicalization; one rule version and explicit unresolved reasons. This is the **reference** used to judge streaming correctness.
+The production job reads one Bronze replay run, validates source identities and fields, separates repeated deliveries from receiver candidates, reconstructs positions using distributed Spark windows and pyModeS 2.21.1, and publishes immutable Silver versions. [README policy and commands](../README.md#batch-preprocessing-s6) define `raw-silver-v1`, temporal ties, lineage, attribute freshness, and the root completion-marker contract.
 
-### S7 — Streaming reconstruction on the *same raw data*
+Full run `s6-full-2015`: **304,131 broker acknowledgments = 304,131 Bronze deliveries = 304,131 unique receptions**. The existing pinned Avro covers approximately 301 seconds. Successful HDFS versions `/airtraffic/silver/full-2015-v2` and `/airtraffic/silver/full-2015-v3` have identical rows in all eight tables:
+
+| Silver dataset | Rows |
+| --- | ---: |
+| `deliveries` | 304,131 |
+| `receptions` | 304,131 |
+| `rejected` | 200,012 |
+| `transmissions` | 102,283 |
+| `transmission_lineage` | 104,119 |
+| `positions` | 46,244 |
+| `states` | 46,244 |
+| `reconstruction_quality` | 48,729 |
+
+Reception accounting: **104,119 valid + 24,996 unsupported + 175,016 unverified = 304,131**; this sample produced no `invalid` receptions. The unverified records are SBS-3 messages with zero parity; they remain available with their original payloads. `rejected` means excluded from this reconstruction baseline, not that every such source record is corrupt.
+
+Reconstruction accounting: **46,244 decoded + 1,680 expired pairs + 733 without a prior opposite + 72 zone mismatches = 48,729 eligible candidates**. Canonical positions cover 254 aircraft. States contain 44,897 callsigns, 46,149 ground speeds, 46,149 tracks and 46,147 vertical rates; missing or stale values remain null with explicit freshness metadata.
+
+Verification passed:
+
+- Bounded run `s5-20261104`: 2,100 deliveries → 1,100 unique receptions → 407 valid receptions → 395 candidates → 39 canonical positions. The 1,000 duplicate deliveries remain linked in `deliveries`.
+- Every published table passed schema, count and full-row multiplicity read-back checks. The two complete runs produced identical tables and canonical identities, with zero orphaned reception references.
+- All 304,131 Silver source JSON records, payloads and timestamps matched the original Avro by record index; stored source-content hashes matched.
+- Seven deterministic tests cover known CPR coordinates, malformed inputs, nullable metadata, duplicate deliveries, lineage, temporal ties and reordered input, expired/missing/zone-mismatched pairs, conservative receiver grouping, attribute freshness, and publication failure.
+- An initial full-run JVM memory failure left no root `_SUCCESS`. Disk-backed caches, smaller Parquet row groups and the documented batch memory allocation resolved it; both subsequent full runs completed.
+
+Scope: this is a local correctness baseline, not a distributed performance result or independently surveyed position ground truth. The decoder supports CRC-valid DF17 airborne barometric CPR, identification and ground velocity; other types remain classified and preserved. Fixed 10 ms grouping is a conservative candidate policy, and matching stays within each source file. Surface positions, GNSS-height CPR, receiver-clock correction, trajectory analytics, and streaming reconstruction are not implemented in S6. No new datasets were downloaded.
+
+### S7 — Streaming reconstruction on the *same raw data* (verified locally)
+
+Implemented `jobs/stream.py` and `airtraffic/preprocessing/streaming.py`. Structured Streaming consumes one isolated run from Kafka; `foreachBatch` applies shared S6 transforms to incoming records and durable bounded reception state. This implementation uses an explicit application watermark and HDFS state snapshots, not Spark native state-store operators. See the README for the exact finalization and retention contract.
+
+Verified HDFS version `/airtraffic/streaming/s7-full-v3`: 304,131 deliveries across four epochs, zero late rejections, 46,244 canonical positions and states. Full-row comparisons against S6 passed for positions, states, transmissions (102,283), lineage (104,119) and quality outcomes (48,729). State rows were 33,578 → 33,812 → 34,187 → 0. Observed epoch processing times were 103.0, 58.2, 54.4 and 20.0 seconds on the local stack; these include publication/read-back work and are not end-to-end visibility latency or throughput benchmarks.
+
+The bounded real replay crossed three epochs and a process restart with 798 pending receptions. It recovered and produced 39 positions identical to S6, retaining all 407 candidate lineage links. Kafka integration fixtures verified normal cross-batch CPR, reordering, duplicates, receiver grouping, missing/expired partners, one rejected late reception, pending-state restart and unrelated-run isolation. Streaming emitted one position versus two in full batch when the deliberately late reception was included. A partial table-write fault and committed-epoch replay produced no duplicate position effects. Four S7 tests and seven S6 tests passed (the grouping retention regression was run separately).
+
+Limits: state is bounded per aircraft and event-time horizon, with fixed historical summaries retained to preserve stale timestamps and expired-partner reasons. Total summaries grow with distinct aircraft; historical checkpoint/output versions are retained. A finite replay must declare its exact delivery count to flush the tail. One writer owns each version. Recovery was checked at query/process restart and partial-write boundaries, not host-cluster failure. No S8 work has started.
+
 
 - Replay S5 receptions via Kafka in controlled event-time order/rate, plus separately seeded duplicates, rearrangements and late arrivals. Use aircraft/run isolation and proper event-time state limits.
 - Reproduce S6 canonical policy for inputs still within the configured watermark/state retention. Deduplicate output effects using stable canonical IDs, not counts of matching pairs.
@@ -150,7 +182,7 @@ Run `s5-20261104`: 1,000 initial deliveries, SIGKILL archive, 1,000 duplicate re
 ### S9 — Business analytics, Lambda corrections and Spark evidence
 
 - Build canonical trajectory points/segments and honest gap metrics. Build distinct aircraft **observed per H3 cell/minute**, time series and explicit coverage statistics. Missing coverage is **not** proof of zero traffic.
-- Implement streaming provisional metrics and immutable batch recomputation for chosen committed input snapshots, including late/revised canonical positions. Recompute both **old and new** affected cells/windows and nearby trajectory segments where necessary.
+- Implement streaming provisional metrics and a correct **full batch recomputation** for chosen committed input snapshots. Then add targeted recomputation for late/revised positions, including both **old and new** affected cells/windows and nearby trajectory segments. Require equal outputs for the same snapshot and rules before comparing cost.
 - Validate full output versions before switching the active serving pointer; API prefers batch within published coverage, otherwise provisional. Never add both versions. Store a correction reason, affected keys and version/lineage.
 - Deliver the four dashboard views in section 1. Demonstrate one reproducible seeded lateness case (e.g. **4 → 5**) and a replay where no correction is needed. Separate injected faults from naturally observed receiver effects.
 - Execute the Spark course evidence matrix in section 6 with real code, independent fixtures and measured plans/results. **Exit:** corrections are end-to-end correct and transparent, and advanced Spark claims are backed by actual measurements.
@@ -168,7 +200,7 @@ Run `s5-20261104`: 1,000 initial deliveries, SIGKILL archive, 1,000 duplicate re
 - Reproduce the source-to-dashboard demo from pinned real raw input, plus a clearly labeled injected late/duplicate case and a restart/recovery case.
 - Report receptions, inferred transmissions, canonical positions, aircraft, Kafka deliveries and physical replicated bytes as **different quantities**. Show actual coverage, achieved/missed targets and limitations.
 - Link requirement → runnable command/test → exact input/seed/config → measured result/executed plan → lesson/report section. Include security, provenance, privacy and source-access constraints.
-- Keep the old October 26 State Vector demo separately as an **earlier checkpoint**, not a claim that the new raw pipeline was already completed.
+- Label the former State Vector checkpoint as historical Git evidence, not part of the active raw pipeline.
 
 ## 5. Product contracts and metrics
 
@@ -205,29 +237,9 @@ Every claim below needs **runnable code + independent correctness fixture + exec
 
 **Engineering priority:** correctness of raw-to-canonical reconstruction and Lambda correction **before** ML or GraphFrames. If source coverage is too short for time-series forecasting, do not fabricate long continuous observations; seek instructor-approved scope interpretation and record it.
 
-## 7. Existing code, checkpoint evidence and document ownership
+## 7. Current repository and evidence
 
-### What is **already implemented** (October 26 State Vector prototype)
-
-The local Compose setup verified State Vector CSV replay and a bounded live REST collector, Kafka acknowledgment, separate Spark/HDFS archival paths and immutable batch Parquet traffic/trajectory tables. The synthetic ten-row fixture archived ten deliveries and generated three eligible positions. The October 26 real REST run archived **19** State Vector observations and saved **3 traffic rows and 7 trajectory segments** from **12 eligible positions**. These are valid infrastructure/code-reuse evidence, **not** evidence of raw ADS-B decoding.
-
-Reuse the Kafka publisher, archive/checkpoint patterns, HDFS paths, Parquet publication validation and demo/test harness when compatible. Implement **new schemas/topics and reconstruction jobs**, rather than renaming `State Vector` input/output fields to claim they are raw frames.
-
-### Raw exploratory evidence (separate from the running app)
-
-A teammate's reported standalone probes decoded 2015 and short 2017 raw samples and ran a file-source Spark streaming pairing experiment. These experiments show possible feasibility but **do not yet establish** Kafka raw ingestion, correct batch–stream canonical equality, raw-derived MongoDB publication, true raw live, distributed execution or a final dashboard. See section 2.2 for exact reported boundaries.
-
-### Keep documentation consistent
-
-- **This `plan.md` is the only active roadmap.** `architecture.md` documents **legacy implementation versus new Raw-first target**. `checkpoint-guide.md` describes **only** the October 26 historical checkpoint and should never override stages S5–S11.
-- Existing `README.md` and `data/README.md` commands remain **legacy** until corresponding raw commands are implemented. Do not advertise imagined commands for S5–S11 as runnable.
-- Source files and tests do **not** change merely because these documents change. Mark each newly built stage as Planned / In Progress / Verified with date, command/run ID, input/coverage, measured output and evidence location.
-
-### References and source starting points
-
-- [OpenSky public raw sample](https://github.com/openskynetwork/osky-sample) (reported pinned commit `1b179c1c541b178944010a2eb6fa5189a4f9193d`).
-- [OpenSky 2017 anonymized raw archive](https://s3.opensky-network.org/data-samples/raw/20170109_16_anonymized.avro.bz2) (large object; the reported prefix is **not** the full archive).
-- [OpenSky REST API reference](https://openskynetwork.github.io/opensky-api/rest.html) (**processed State Vectors**, not raw live frames).
-- [Apache Spark Structured Streaming documentation](https://spark.apache.org/docs/3.5.7/structured-streaming-programming-guide.html); [MongoDB single-document atomicity](https://www.mongodb.com/docs/manual/core/write-operations-atomicity/).
-- [OurAirports data](https://ourairports.com/data/) for optional contextual reference snapshots.
-- Course-provided guidelines: advanced Spark operations, queue, distributed storage, NoSQL, Kubernetes/cloud, analytical comparisons and lessons learned; retain the supplied course file unchanged.
+- `airtraffic/ingestion/` contains the source reader, identities, Kafka publisher and Bronze mapping; `airtraffic/preprocessing/` contains validation, grouping, reconstruction and Silver publication.
+- `jobs/` contains the three runnable Spark entrypoints for Bronze archival, inspection and Silver batch processing; `compose.yaml` and `deploy/` provide Kafka, Spark, and HDFS services.
+- [README.md](../README.md) gives runnable S5 and S6 commands. [S5 evidence](../data/verification/s5_raw_20261104.json) records the bounded 2,100-delivery verification. The original Avro sample remains ignored under `data/raw/`.
+- S8–S11 stay planned until implemented and measured. The former S1–S4 code and supporting documents remain available in Git commit `3896a53`; they are not active dependencies.

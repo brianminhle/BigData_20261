@@ -14,10 +14,8 @@ x-spark: &spark
     context: .
     dockerfile: deploy/spark/Dockerfile
   volumes:
-    - ./scripts:/workspace/scripts:ro
     - ./airtraffic:/workspace/airtraffic:ro
     - ./jobs:/workspace/jobs:ro
-    - ./tests:/workspace/tests:ro
     - ./data:/workspace/data:ro
   environment:
     HADOOP_USER_NAME: hadoop
@@ -55,23 +53,13 @@ services:
       timeout: 10s
       retries: 12
 
-  topic-init: &topic-init
+  topic-init:
     image: apache/kafka:3.9.1@sha256:4ceccc577f03f51f6af8dbfda55194d0d892f4fa7913ffbded567ce3895622ed
     depends_on:
       kafka: {condition: service_healthy}
     entrypoint: [/opt/kafka/bin/kafka-topics.sh]
-    command: [--bootstrap-server, kafka:9092, --create, --if-not-exists, --topic, airtraffic.replay.v1, --partitions, "3", --replication-factor, "1", --config, retention.ms=604800000]
-    mem_limit: 512m
-
-  raw-topic-init:
-    <<: *topic-init
-    profiles: [raw, tools]
     command: [--bootstrap-server, kafka:9092, --create, --if-not-exists, --topic, airtraffic.raw.replay.v1, --partitions, "3", --replication-factor, "1", --config, retention.ms=604800000]
-
-  live-topic-init:
-    <<: *topic-init
-    profiles: [live, tools]
-    command: [--bootstrap-server, kafka:9092, --create, --if-not-exists, --topic, airtraffic.live.v1, --partitions, "3", --replication-factor, "1", --config, retention.ms=604800000]
+    mem_limit: 512m
 
   namenode:
     <<: *hdfs
@@ -106,7 +94,7 @@ services:
     volumes:
       - datanode-2-data:/var/lib/hadoop/data
 
-  archive: &archive
+  archive:
     <<: *spark
     hostname: archive
     depends_on:
@@ -114,52 +102,10 @@ services:
       namenode: {condition: service_healthy}
       datanode-1: {condition: service_started}
       datanode-2: {condition: service_started}
-    command: [/opt/spark/bin/spark-submit, --master, "local[2]", --driver-memory, 1g, --conf, spark.jars.ivy=/opt/spark/ivy, --conf, spark.jars.ivySettings=/opt/spark/ivysettings.xml, --packages, "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.7", jobs/archive_stream.py]
+    command: [/opt/spark/bin/spark-submit, --master, "local[2]", --driver-memory, 1g, --conf, spark.jars.ivy=/opt/spark/ivy, --conf, spark.jars.ivySettings=/opt/spark/ivysettings.xml, --packages, "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.7", jobs/archive.py]
     ports:
       - "127.0.0.1:4040:4040"
     stop_grace_period: 45s
-
-  raw-archive:
-    <<: *archive
-    profiles: [raw]
-    hostname: raw-archive
-    depends_on:
-      raw-topic-init: {condition: service_completed_successfully}
-      namenode: {condition: service_healthy}
-      datanode-1: {condition: service_started}
-      datanode-2: {condition: service_started}
-    command: [/opt/spark/bin/spark-submit, --master, "local[2]", --driver-memory, 1g, --conf, spark.jars.ivy=/opt/spark/ivy, --conf, spark.jars.ivySettings=/opt/spark/ivysettings.xml, --packages, "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.7", jobs/archive_stream.py, --raw-adsb, --topic, airtraffic.raw.replay.v1, --output, "hdfs://namenode:9000/airtraffic/bronze/raw-adsb-v1", --checkpoint, "hdfs://namenode:9000/airtraffic/checkpoints/archive-raw-adsb-v1"]
-    ports:
-      - "127.0.0.1:4042:4040"
-
-  live-archive:
-    <<: *archive
-    profiles: [live]
-    hostname: live-archive
-    depends_on:
-      live-topic-init: {condition: service_completed_successfully}
-      namenode: {condition: service_healthy}
-      datanode-1: {condition: service_started}
-      datanode-2: {condition: service_started}
-    command: [/opt/spark/bin/spark-submit, --master, "local[2]", --driver-memory, 1g, --conf, spark.jars.ivy=/opt/spark/ivy, --conf, spark.jars.ivySettings=/opt/spark/ivysettings.xml, --packages, "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.7", jobs/archive_stream.py, --topic, airtraffic.live.v1, --output, "hdfs://namenode:9000/airtraffic/bronze/live-v1", --checkpoint, "hdfs://namenode:9000/airtraffic/checkpoints/archive-live-v1"]
-    ports:
-      - "127.0.0.1:4041:4040"
-
-  live-collector:
-    <<: *spark
-    profiles: [tools]
-    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
-    depends_on:
-      live-topic-init: {condition: service_completed_successfully}
-    entrypoint: [python3, -m, scripts.collect_live]
-    environment:
-      PYTHONPATH: /workspace
-      OPENSKY_ACCESS_TOKEN: "${OPENSKY_ACCESS_TOKEN:-}"
-    volumes:
-      - ./scripts:/workspace/scripts:ro
-      - ./airtraffic:/workspace/airtraffic:ro
-      - ./data/reports:/workspace/data/reports
-    mem_limit: 512m
 
   producer:
     <<: *spark
@@ -167,32 +113,26 @@ services:
     user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
     depends_on:
       topic-init: {condition: service_completed_successfully}
-    entrypoint: [python3, -m, scripts.publish_replay]
+    entrypoint: [python3, -m, airtraffic]
     mem_limit: 512m
 
   inspect:
     <<: *spark
     profiles: [tools]
-    entrypoint: [/opt/spark/bin/spark-submit, --master, "local[1]", --driver-memory, 512m, jobs/inspect_archive.py]
-    mem_limit: 1280m
-
-  analytics:
-    <<: *spark
-    profiles: [tools]
-    entrypoint: [/opt/spark/bin/spark-submit, --master, "local[1]", --driver-memory, 512m, jobs/inspect_analytics.py]
+    entrypoint: [/opt/spark/bin/spark-submit, --master, "local[1]", --driver-memory, 512m, jobs/inspect_bronze.py]
     mem_limit: 1280m
 
   batch:
     <<: *spark
     profiles: [tools]
-    entrypoint: [/opt/spark/bin/spark-submit, --master, "local[1]", --driver-memory, 512m, jobs/materialize_analytics.py]
-    mem_limit: 1280m
+    entrypoint: [/opt/spark/bin/spark-submit, --master, "local[2]", --driver-memory, 1536m, jobs/preprocess.py]
+    mem_limit: 3g
 
-  batch-inspect:
+  stream:
     <<: *spark
     profiles: [tools]
-    entrypoint: [/opt/spark/bin/spark-submit, --master, "local[1]", --driver-memory, 512m, jobs/inspect_batch.py]
-    mem_limit: 1280m
+    mem_limit: 3g
+    entrypoint: [/opt/spark/bin/spark-submit, --master, "local[2]", --driver-memory, 1536m, --conf, spark.jars.ivy=/opt/spark/ivy, --conf, spark.jars.ivySettings=/opt/spark/ivysettings.xml, --packages, "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.7", jobs/stream.py]
 
 volumes:
   kafka-data:
