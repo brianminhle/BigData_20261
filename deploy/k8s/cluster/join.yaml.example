@@ -1,0 +1,14 @@
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: JoinConfiguration
+discovery:
+  bootstrapToken:
+    apiServerEndpoint: "REPLACE_WITH_CONTROL_PLANE_IP:6443"
+    token: REPLACE_WITH_SHORT_LIVED_JOIN_TOKEN
+    caCertHashes:
+      - "sha256:REPLACE_WITH_CA_PUBLIC_KEY_HASH"
+nodeRegistration:
+  name: airtraffic-worker-1
+  criSocket: unix:///run/containerd/containerd.sock
+  kubeletExtraArgs:
+    - name: node-ip
+      value: REPLACE_WITH_WORKER_IP

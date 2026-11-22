@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: airtraffic-readiness-local
+spec:
+  capacity:
+    storage: 64Mi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: airtraffic-local-retain
+  claimRef:
+    namespace: airtraffic-infra-check
+    name: readiness-storage
+  local:
+    path: /var/lib/airtraffic/infra-check
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - REPLACE_WITH_NODE_HOSTNAME_LABEL

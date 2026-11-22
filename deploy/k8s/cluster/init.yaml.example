@@ -1,0 +1,28 @@
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: REPLACE_WITH_CONTROL_PLANE_IP
+  bindPort: 6443
+nodeRegistration:
+  name: airtraffic-control-1
+  criSocket: unix:///run/containerd/containerd.sock
+  kubeletExtraArgs:
+    - name: node-ip
+      value: REPLACE_WITH_CONTROL_PLANE_IP
+---
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: ClusterConfiguration
+clusterName: airtraffic
+kubernetesVersion: REPLACE_WITH_INSTALLED_KUBERNETES_VERSION
+controlPlaneEndpoint: "REPLACE_WITH_CONTROL_PLANE_IP:6443"
+apiServer:
+  certSANs:
+    - REPLACE_WITH_CONTROL_PLANE_IP
+networking:
+  podSubnet: 10.244.0.0/16
+  serviceSubnet: 10.96.0.0/12
+  dnsDomain: cluster.local
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+cgroupDriver: systemd
