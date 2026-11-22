@@ -1,6 +1,11 @@
 *
+!pyproject.toml
+!setup.cfg
+!src/
+!src/**
 !deploy/
-!deploy/hdfs/
-!deploy/hdfs/**
-!deploy/spark/
-!deploy/spark/**
+!deploy/images/
+!deploy/images/**
+**/__pycache__/
+**/*.pyc
+**/*.egg-info/

@@ -1,0 +1,21 @@
+# Deployment notes only; this is not a Kubernetes manifest or Ansible inventory.
+cluster_name: airtraffic
+api_endpoint: REPLACE_WITH_CONTROL_PLANE_TAILSCALE_IP:6443
+pod_cidr: 10.244.0.0/16
+service_cidr: 10.96.0.0/12
+nodes:
+  - name: airtraffic-control-1
+    roles: [control-plane, initial-workloads]
+    physical_host: REPLACE_WITH_PHYSICAL_HOST_NAME
+    installation: REPLACE_WITH_VM_OR_DEDICATED_HOST
+    os: Ubuntu 24.04
+    architecture: REPLACE_WITH_AMD64_OR_ARM64
+    tailscale_ip: REPLACE_WITH_TAILSCALE_IP_INSIDE_LINUX_NODE
+    cpu_count: null
+    memory_gib: null
+    disk_free_gib: null
+    storage_path: /var/lib/airtraffic
+versions:
+  kubernetes: REPLACE_WITH_PINNED_VERSION
+  containerd: REPLACE_WITH_INSTALLED_VERSION
+  cni: REPLACE_WITH_PINNED_VERSION

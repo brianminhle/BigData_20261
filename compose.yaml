@@ -4,7 +4,7 @@ x-hdfs: &hdfs
   image: airtraffic-hdfs:3.4.2
   build:
     context: .
-    dockerfile: deploy/hdfs/Dockerfile
+    dockerfile: deploy/images/hdfs/Dockerfile
   mem_limit: 768m
   stop_grace_period: 30s
 
@@ -12,14 +12,17 @@ x-spark: &spark
   image: airtraffic-spark:3.5.7
   build:
     context: .
-    dockerfile: deploy/spark/Dockerfile
+    dockerfile: deploy/images/spark/Dockerfile
   volumes:
-    - ./airtraffic:/workspace/airtraffic:ro
-    - ./jobs:/workspace/jobs:ro
     - ./data:/workspace/data:ro
   environment:
     HADOOP_USER_NAME: hadoop
-    PYTHONPATH: /workspace
+    AIRTRAFFIC_KAFKA_BOOTSTRAP_SERVERS: ${AIRTRAFFIC_KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+    AIRTRAFFIC_RAW_TOPIC: ${AIRTRAFFIC_RAW_TOPIC:-airtraffic.raw.replay.v1}
+    AIRTRAFFIC_RAW_ARCHIVE: ${AIRTRAFFIC_RAW_ARCHIVE:-hdfs://namenode:9000/airtraffic/bronze/raw-adsb-v1}
+    AIRTRAFFIC_RAW_CHECKPOINT: ${AIRTRAFFIC_RAW_CHECKPOINT:-hdfs://namenode:9000/airtraffic/checkpoints/archive-raw-adsb-v1}
+    AIRTRAFFIC_STREAMING_ROOT: ${AIRTRAFFIC_STREAMING_ROOT:-hdfs://namenode:9000/airtraffic/streaming}
+    AIRTRAFFIC_RAW_AVRO: ${AIRTRAFFIC_RAW_AVRO:-/workspace/data/raw/raw20150421_sample.avro}
   mem_limit: 2304m
 
 services:
@@ -58,7 +61,7 @@ services:
     depends_on:
       kafka: {condition: service_healthy}
     entrypoint: [/opt/kafka/bin/kafka-topics.sh]
-    command: [--bootstrap-server, kafka:9092, --create, --if-not-exists, --topic, airtraffic.raw.replay.v1, --partitions, "3", --replication-factor, "1", --config, retention.ms=604800000]
+    command: [--bootstrap-server, "${AIRTRAFFIC_KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}", --create, --if-not-exists, --topic, "${AIRTRAFFIC_RAW_TOPIC:-airtraffic.raw.replay.v1}", --partitions, "3", --replication-factor, "1", --config, retention.ms=604800000]
     mem_limit: 512m
 
   namenode:
@@ -102,7 +105,7 @@ services:
       namenode: {condition: service_healthy}
       datanode-1: {condition: service_started}
       datanode-2: {condition: service_started}
-    command: [/opt/spark/bin/spark-submit, --master, "local[2]", --driver-memory, 1g, --conf, spark.jars.ivy=/opt/spark/ivy, --conf, spark.jars.ivySettings=/opt/spark/ivysettings.xml, --packages, "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.7", jobs/archive.py]
+    command: [/opt/spark/bin/spark-submit, --master, "local[2]", --driver-memory, 1g, --conf, spark.jars.ivy=/opt/spark/ivy, --conf, spark.jars.ivySettings=/opt/spark/ivysettings.xml, --packages, "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.7", src/airtraffic/jobs/archive.py]
     ports:
       - "127.0.0.1:4040:4040"
     stop_grace_period: 45s
@@ -119,20 +122,20 @@ services:
   inspect:
     <<: *spark
     profiles: [tools]
-    entrypoint: [/opt/spark/bin/spark-submit, --master, "local[1]", --driver-memory, 512m, jobs/inspect_bronze.py]
+    entrypoint: [/opt/spark/bin/spark-submit, --master, "local[1]", --driver-memory, 512m, src/airtraffic/jobs/inspect_bronze.py]
     mem_limit: 1280m
 
   batch:
     <<: *spark
     profiles: [tools]
-    entrypoint: [/opt/spark/bin/spark-submit, --master, "local[2]", --driver-memory, 1536m, jobs/preprocess.py]
+    entrypoint: [/opt/spark/bin/spark-submit, --master, "local[2]", --driver-memory, 1536m, src/airtraffic/jobs/preprocess.py]
     mem_limit: 3g
 
   stream:
     <<: *spark
     profiles: [tools]
     mem_limit: 3g
-    entrypoint: [/opt/spark/bin/spark-submit, --master, "local[2]", --driver-memory, 1536m, --conf, spark.jars.ivy=/opt/spark/ivy, --conf, spark.jars.ivySettings=/opt/spark/ivysettings.xml, --packages, "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.7", jobs/stream.py]
+    entrypoint: [/opt/spark/bin/spark-submit, --master, "local[2]", --driver-memory, 1536m, --conf, spark.jars.ivy=/opt/spark/ivy, --conf, spark.jars.ivySettings=/opt/spark/ivysettings.xml, --packages, "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.7", src/airtraffic/jobs/stream.py]
 
 volumes:
   kafka-data:

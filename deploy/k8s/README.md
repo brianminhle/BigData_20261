@@ -12,6 +12,7 @@ k8s/
 
 | File | Mục đích |
 | --- | --- |
+| `cluster/inventory.yaml.example` | Ghi máy/VM, host vật lý, IP, tài nguyên và phiên bản; không apply vào Kubernetes |
 | `cluster/modules-load.conf` | Module Linux cần cho container và mạng pod |
 | `cluster/sysctl.conf` | Thiết lập forwarding mạng trên host |
 | `cluster/init.yaml.example` | Mẫu tạo control plane đầu tiên |

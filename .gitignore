@@ -2,19 +2,46 @@
 __pycache__/
 *.py[cod]
 .venv/
+venv/
 .pytest_cache/
 .ruff_cache/
+.mypy_cache/
+.tox/
+.nox/
+*.egg-info/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
 
 # Local source data and generated runs
-/data/raw/
-/data/manifests/
-/data/reports/
-/data/samples/
+/data/*
+!/data/README.md
+/artifacts/
+/checkpoints/
+/spark-warehouse/
+/metastore_db/
 *.log
 .env
+.env.*
+!.env.example
+!.env.*.example
+
+# Machine-specific cluster configuration, credentials and local evidence
+/deploy/k8s/local/
+/.aws/
+/.kube/
+/secrets/
+*.key
+*.p12
+*.pfx
 
 # Local editor and build output
 .vscode/
 .idea/
 build/
 dist/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
