@@ -1,0 +1,74 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: airtraffic-analytics
+spec:
+  suspend: true
+  backoffLimit: 0
+  activeDeadlineSeconds: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 185
+        runAsGroup: 185
+        fsGroup: 185
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: analytics
+          image: airtraffic-state-stream:local
+          imagePullPolicy: IfNotPresent
+          workingDir: /tmp
+          command: [/opt/spark/bin/spark-submit]
+          args:
+            - --master
+            - local[2]
+            - --conf
+            - spark.jars.ivy=/tmp/ivy
+            - /app/src/airtraffic/jobs/analyze_states.py
+            - --root
+            - $(ANALYTICS_ROOT)
+            - --output
+            - $(ANALYTICS_OUTPUT)
+            - --start
+            - $(ANALYTICS_START)
+            - --end
+            - $(ANALYTICS_END)
+          envFrom:
+            - configMapRef:
+                name: airtraffic-states
+            - configMapRef:
+                name: airtraffic-analytics-run
+          env:
+            - name: AIRTRAFFIC_MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: airtraffic-states-credentials
+                  key: AIRTRAFFIC_MINIO_ACCESS_KEY
+            - name: AIRTRAFFIC_MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: airtraffic-states-credentials
+                  key: AIRTRAFFIC_MINIO_SECRET_KEY
+          resources:
+            requests:
+              cpu: '1'
+              memory: 1Gi
+            limits:
+              cpu: '2'
+              memory: 3Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: temporary
+              mountPath: /tmp
+      volumes:
+        - name: temporary
+          emptyDir:
+            sizeLimit: 4Gi

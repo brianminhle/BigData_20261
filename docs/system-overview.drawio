@@ -1,0 +1,174 @@
+<mxfile host="65bd71144e">
+    <diagram id="states" name="State vectors - tổng thể">
+        <mxGraphModel dx="1578" dy="1270" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1080" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" parent="1" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=27;fontStyle=1;fontColor=#183153;" value="AIR TRAFFIC ANALYTICS  |  TỔNG THỂ HỆ THỐNG" vertex="1">
+                    <mxGeometry height="45" width="1350" x="50" y="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="subtitle" parent="1" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=15;fontColor=#526581;" value="Nguồn chính: OpenSky state vectors  •  Phạm vi quan sát: bbox cấu hình  •  Màu xanh: đã có code/kiểm chứng local  •  Nét đứt: kế hoạch" vertex="1">
+                    <mxGeometry height="35" width="1640" x="50" y="83" as="geometry"/>
+                </mxCell>
+                <mxCell id="active-band" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3F8FD;strokeColor=#C7DCF1;arcSize=2;" value="" vertex="1">
+                    <mxGeometry height="485" width="1730" x="35" y="145" as="geometry"/>
+                </mxCell>
+                <mxCell id="active-label" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=17;fontStyle=1;fontColor=#245782;" value="ĐÃ TRIỂN KHAI / KIỂM CHỨNG LOCAL" vertex="1">
+                    <mxGeometry height="32" width="520" x="55" y="157" as="geometry"/>
+                </mxCell>
+                <mxCell id="source" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DDEDF9;strokeColor=#4B82B4;strokeWidth=2;fontSize=16;fontColor=#183153;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;OpenSky API&lt;/b&gt;&lt;br&gt;/states/all&lt;br&gt;state vectors JSON" vertex="1">
+                    <mxGeometry height="105" width="185" x="60" y="250" as="geometry"/>
+                </mxCell>
+                <mxCell id="collector" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DDEDF9;strokeColor=#4B82B4;strokeWidth=2;fontSize=16;fontColor=#183153;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;Collector&lt;/b&gt;&lt;br&gt;poll / one-shot&lt;br&gt;kiểm tra schema + tạo event ID" vertex="1">
+                    <mxGeometry height="105" width="210" x="285" y="250" as="geometry"/>
+                </mxCell>
+                <mxCell id="snapshot" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DDEDF9;strokeColor=#4B82B4;strokeWidth=2;fontSize=16;fontColor=#183153;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;MinIO snapshots&lt;/b&gt;&lt;br&gt;JSON gốc + metadata&lt;br&gt;outbox / receipt ACK" vertex="1">
+                    <mxGeometry height="105" width="220" x="535" y="250" as="geometry"/>
+                </mxCell>
+                <mxCell id="kafka" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DDEDF9;strokeColor=#4B82B4;strokeWidth=2;fontSize=16;fontColor=#183153;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;Kafka&lt;/b&gt;&lt;br&gt;observation / event&lt;br&gt;at-least-once" vertex="1">
+                    <mxGeometry height="105" width="190" x="795" y="250" as="geometry"/>
+                </mxCell>
+                <mxCell id="bronze" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DDEDF9;strokeColor=#4B82B4;strokeWidth=2;fontSize=16;fontColor=#183153;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;Spark · Bronze&lt;/b&gt;&lt;br&gt;archive payload + offset&lt;br&gt;ghi lỗi validation" vertex="1">
+                    <mxGeometry height="105" width="205" x="1025" y="250" as="geometry"/>
+                </mxCell>
+                <mxCell id="silver" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DDEDF9;strokeColor=#4B82B4;strokeWidth=2;fontSize=16;fontColor=#183153;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;Spark · Silver&lt;/b&gt;&lt;br&gt;chuẩn hóa + quality flags&lt;br&gt;watermark / dedup ID" vertex="1">
+                    <mxGeometry height="105" width="205" x="1270" y="250" as="geometry"/>
+                </mxCell>
+                <mxCell id="gold" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DDEDF9;strokeColor=#4B82B4;strokeWidth=2;fontSize=16;fontColor=#183153;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;Spark · Gold&lt;/b&gt;&lt;br&gt;distinct ICAO / ô 1°&lt;br&gt;cửa sổ 5 phút" vertex="1">
+                    <mxGeometry height="105" width="205" x="1515" y="250" as="geometry"/>
+                </mxCell>
+                <mxCell id="minio-output" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F2FC;strokeColor=#79A9D0;fontSize=15;fontColor=#245782;align=center;verticalAlign=middle;" value="&lt;b&gt;MinIO Parquet&lt;/b&gt;  •  bronze/  •  silver/  •  gold/  •  checkpoints/  •  _contract" vertex="1">
+                    <mxGeometry height="52" width="695" x="1025" y="390" as="geometry"/>
+                </mxCell>
+                <mxCell id="batch" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DDEDF9;strokeColor=#4B82B4;strokeWidth=2;fontSize=16;fontColor=#183153;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;Batch tham chiếu · Python local&lt;/b&gt;&lt;br&gt;đọc toàn bộ snapshots, chuẩn hóa và đếm lại" vertex="1">
+                    <mxGeometry height="90" width="315" x="535" y="495" as="geometry"/>
+                </mxCell>
+                <mxCell id="report" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DDEDF9;strokeColor=#4B82B4;strokeWidth=2;fontSize=15;fontColor=#183153;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;Báo cáo local&lt;/b&gt;&lt;br&gt;observations / quality / aircraft_windows&lt;br&gt;_SUCCESS" vertex="1">
+                    <mxGeometry height="90" width="325" x="930" y="495" as="geometry"/>
+                </mxCell>
+                <mxCell id="compare" parent="1" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=15;fontColor=#526581;" value="Đối chiếu kết quả Gold với batch reference trên cùng tập snapshot / phạm vi quan sát" vertex="1">
+                    <mxGeometry height="70" width="410" x="1285" y="505" as="geometry"/>
+                </mxCell>
+                <mxCell id="planned-band" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF9EF;strokeColor=#E7D2AA;arcSize=2;" value="" vertex="1">
+                    <mxGeometry height="300" width="1730" x="35" y="665" as="geometry"/>
+                </mxCell>
+                <mxCell id="planned-label" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=17;fontStyle=1;fontColor=#8A602C;" value="KIẾN TRÚC ĐÍCH · CHƯA TRIỂN KHAI" vertex="1">
+                    <mxGeometry height="32" width="560" x="55" y="678" as="geometry"/>
+                </mxCell>
+                <mxCell id="spark-batch" parent="1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;dashPattern=7 5;fillColor=#FFF0D9;strokeColor=#C9964B;strokeWidth=2;fontSize=16;fontColor=#674B28;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;Spark Batch&lt;/b&gt;&lt;br&gt;tính lại lịch sử / xử lý bù&lt;br&gt;đối chiếu streaming" vertex="1">
+                    <mxGeometry height="100" width="250" x="535" y="775" as="geometry"/>
+                </mxCell>
+                <mxCell id="mongo" parent="1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;dashPattern=7 5;fillColor=#FFF0D9;strokeColor=#C9964B;strokeWidth=2;fontSize=16;fontColor=#674B28;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;MongoDB&lt;/b&gt;&lt;br&gt;serving store&lt;br&gt;phiên bản kết quả đã công bố" vertex="1">
+                    <mxGeometry height="100" width="245" x="985" y="775" as="geometry"/>
+                </mxCell>
+                <mxCell id="api" parent="1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;dashPattern=7 5;fillColor=#FFF0D9;strokeColor=#C9964B;strokeWidth=2;fontSize=16;fontColor=#674B28;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;API&lt;/b&gt;&lt;br&gt;truy vấn dữ liệu phục vụ" vertex="1">
+                    <mxGeometry height="100" width="175" x="1290" y="775" as="geometry"/>
+                </mxCell>
+                <mxCell id="dashboard" parent="1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;dashPattern=7 5;fillColor=#FFF0D9;strokeColor=#C9964B;strokeWidth=2;fontSize=16;fontColor=#674B28;align=center;verticalAlign=middle;spacing=8;" value="&lt;b&gt;Dashboard&lt;/b&gt;&lt;br&gt;bản đồ / mật độ&lt;br&gt;độ mới / chất lượng" vertex="1">
+                    <mxGeometry height="100" width="195" x="1525" y="775" as="geometry"/>
+                </mxCell>
+                <mxCell id="note" parent="1" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fontColor=#526581;" value="Triển khai: Docker Compose local đã kiểm chứng. Kubernetes collector mới có manifest, CronJob suspend; chưa chạy trên cụm." vertex="1">
+                    <mxGeometry height="35" width="1660" x="55" y="990" as="geometry"/>
+                </mxCell>
+                <mxCell id="e1" edge="1" parent="1" source="source" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#4B82B4;strokeWidth=2;fontSize=13;" target="collector" value="HTTPS">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e2" edge="1" parent="1" source="collector" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#4B82B4;strokeWidth=2;fontSize=13;" target="snapshot" value="lưu trước">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e3" edge="1" parent="1" source="snapshot" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#4B82B4;strokeWidth=2;fontSize=13;" target="kafka" value="publish sau khi lưu">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e4" edge="1" parent="1" source="kafka" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#4B82B4;strokeWidth=2;" target="bronze">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e5" edge="1" parent="1" source="bronze" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#4B82B4;strokeWidth=2;" target="silver">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e6" edge="1" parent="1" source="silver" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#4B82B4;strokeWidth=2;" target="gold">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e7" edge="1" parent="1" source="snapshot" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#4B82B4;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.1;entryY=0;" target="batch">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e8" edge="1" parent="1" source="batch" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#4B82B4;strokeWidth=2;" target="report">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e9" edge="1" parent="1" source="snapshot" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;dashPattern=7 5;strokeColor=#C9964B;strokeWidth=2;fontSize=13;exitX=0;exitY=0.8;entryX=0.5;entryY=0;" target="spark-batch" value="snapshot lịch sử">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="510" y="335"/>
+                            <mxPoint x="510" y="740"/>
+                            <mxPoint x="660" y="740"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e10" edge="1" parent="1" source="spark-batch" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;dashPattern=7 5;strokeColor=#C9964B;strokeWidth=2;fontSize=13;" target="mongo" value="batch result">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e11" edge="1" parent="1" source="gold" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;dashPattern=7 5;strokeColor=#C9964B;strokeWidth=2;fontSize=13;exitX=1;exitY=0.8;entryX=0.8;entryY=0;" target="mongo" value="Gold đã chốt">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1740" y="335"/>
+                            <mxPoint x="1740" y="740"/>
+                            <mxPoint x="1180" y="740"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e12" edge="1" parent="1" source="mongo" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;dashPattern=7 5;strokeColor=#C9964B;strokeWidth=2;" target="api">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e13" edge="1" parent="1" source="api" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;dashPattern=7 5;strokeColor=#C9964B;strokeWidth=2;" target="dashboard">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="raw-legacy" name="Raw replay - tham khảo">
+        <mxGraphModel dx="1200" dy="650" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="700" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="legacy-title" value="RAW ADS-B REPLAY  |  RUNTIME CŨ ĐỂ THAM KHẢO" style="text;html=1;align=left;verticalAlign=middle;fontSize=25;fontStyle=1;fontColor=#183153;" vertex="1" parent="1">
+                    <mxGeometry x="50" y="35" width="1150" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="legacy-note" value="Compose tại gốc repo chạy nhánh raw/HDFS cũ. Nhánh này không phải luồng state vectors chính." style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontColor=#526581;" vertex="1" parent="1">
+                    <mxGeometry x="50" y="95" width="1120" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="raw" value="&lt;b&gt;OpenSky Avro mẫu&lt;/b&gt;&lt;br&gt;raw receptions lịch sử" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EFF1F4;strokeColor=#8795A6;strokeWidth=2;fontSize=16;" vertex="1" parent="1">
+                    <mxGeometry x="55" y="220" width="190" height="92" as="geometry"/>
+                </mxCell>
+                <mxCell id="producer" value="&lt;b&gt;Producer&lt;/b&gt;&lt;br&gt;replay theo run ID" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EFF1F4;strokeColor=#8795A6;strokeWidth=2;fontSize=16;" vertex="1" parent="1">
+                    <mxGeometry x="290" y="220" width="190" height="92" as="geometry"/>
+                </mxCell>
+                <mxCell id="raw-kafka" value="&lt;b&gt;Kafka&lt;/b&gt;&lt;br&gt;raw replay topic" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EFF1F4;strokeColor=#8795A6;strokeWidth=2;fontSize=16;" vertex="1" parent="1">
+                    <mxGeometry x="525" y="220" width="190" height="92" as="geometry"/>
+                </mxCell>
+                <mxCell id="archive" value="&lt;b&gt;Spark archive&lt;/b&gt;&lt;br&gt;HDFS Bronze" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EFF1F4;strokeColor=#8795A6;strokeWidth=2;fontSize=16;" vertex="1" parent="1">
+                    <mxGeometry x="760" y="220" width="190" height="92" as="geometry"/>
+                </mxCell>
+                <mxCell id="raw-silver" value="&lt;b&gt;Spark batch&lt;/b&gt;&lt;br&gt;HDFS Silver" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EFF1F4;strokeColor=#8795A6;strokeWidth=2;fontSize=16;" vertex="1" parent="1">
+                    <mxGeometry x="995" y="220" width="190" height="92" as="geometry"/>
+                </mxCell>
+                <mxCell id="raw-stream" value="&lt;b&gt;Spark stream&lt;/b&gt;&lt;br&gt;streaming epochs trên HDFS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EFF1F4;strokeColor=#8795A6;strokeWidth=2;fontSize=16;" vertex="1" parent="1">
+                    <mxGeometry x="760" y="420" width="260" height="92" as="geometry"/>
+                </mxCell>
+                <mxCell id="l1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#8795A6;strokeWidth=2;" edge="1" parent="1" source="raw" target="producer">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l2" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#8795A6;strokeWidth=2;" edge="1" parent="1" source="producer" target="raw-kafka">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l3" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#8795A6;strokeWidth=2;" edge="1" parent="1" source="raw-kafka" target="archive">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l4" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#8795A6;strokeWidth=2;" edge="1" parent="1" source="archive" target="raw-silver">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l5" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#8795A6;strokeWidth=2;exitX=0.5;exitY=1;entryX=0;entryY=0.5;" edge="1" parent="1" source="raw-kafka" target="raw-stream">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

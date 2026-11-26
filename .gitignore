@@ -45,3 +45,11 @@ dist/
 Thumbs.db
 *.swp
 *.swo
+
+# Local API credentials
+credentials.json
+credentials.*.json
+
+# Environment files with deployment secrets
+*.env
+!*.env.example

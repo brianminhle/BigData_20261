@@ -8,10 +8,11 @@ import signal
 from threading import Event
 import time
 
+from airtraffic.ingestion.credentials import load_credentials
 from airtraffic.ingestion.kafka import create_producer
 from airtraffic.ingestion.opensky_api import BoundingBox, OpenSkyClient, RateLimited
 from airtraffic.ingestion.state_outbox import collect_once, publish_pending
-from airtraffic.storage.snapshots import SnapshotStore
+from airtraffic.storage.state_connection import connect_store
 
 
 LOGGER = logging.getLogger(__name__)
@@ -23,6 +24,8 @@ def parse_args(argv=None):
     parser.add_argument("--topic", default=os.getenv("AIRTRAFFIC_STATES_TOPIC", "airtraffic.states.opensky.v1"))
     parser.add_argument("--interval-seconds", type=float, default=120)
     parser.add_argument("--once", action="store_true")
+    parser.add_argument("--credentials-file", default=os.getenv("AIRTRAFFIC_OPENSKY_CREDENTIALS_FILE"))
+    parser.add_argument("--anonymous", action="store_true", help="One-shot public API check only")
     parser.add_argument("--replay-pending", action="store_true", help="Recover MinIO outbox without calling OpenSky")
     parser.add_argument("--endpoint", default=os.getenv("AIRTRAFFIC_MINIO_ENDPOINT"))
     parser.add_argument("--bucket", default=os.getenv("AIRTRAFFIC_STATES_BUCKET", "airtraffic-states"))
@@ -32,6 +35,8 @@ def parse_args(argv=None):
     args = parser.parse_args(argv)
     if not math.isfinite(args.interval_seconds) or args.interval_seconds < 120:
         parser.error("--interval-seconds must be at least 120")
+    if args.anonymous and (not args.once or args.replay_pending):
+        parser.error("--anonymous requires --once and cannot be combined with --replay-pending")
     try:
         BoundingBox(*args.bbox)
     except ValueError as error:
@@ -62,26 +67,16 @@ def collect_loop(client, producer, box, topic, interval, stop, store, once=False
 
 def main(argv=None):
     args = parse_args(argv)
-    client_id = os.getenv("AIRTRAFFIC_OPENSKY_CLIENT_ID")
-    client_secret = os.getenv("AIRTRAFFIC_OPENSKY_CLIENT_SECRET")
-    if not args.replay_pending and (not client_id or not client_secret):
-        raise ValueError("Set AIRTRAFFIC_OPENSKY_CLIENT_ID and AIRTRAFFIC_OPENSKY_CLIENT_SECRET")
-    access_key = os.getenv("AIRTRAFFIC_MINIO_ACCESS_KEY")
-    secret_key = os.getenv("AIRTRAFFIC_MINIO_SECRET_KEY")
-    if not args.endpoint or not access_key or not secret_key:
-        raise ValueError("Set MinIO endpoint and AIRTRAFFIC_MINIO_ACCESS_KEY / AIRTRAFFIC_MINIO_SECRET_KEY")
-    from minio import Minio
-    from urllib3 import PoolManager, Timeout
-
-    store = SnapshotStore(Minio(args.endpoint, access_key=access_key, secret_key=secret_key,
-                                secure=not args.insecure,
-                                http_client=PoolManager(timeout=Timeout(connect=10, read=60), retries=2)), args.bucket)
+    client_id, client_secret = (None, None)
+    if not args.replay_pending and not args.anonymous:
+        client_id, client_secret = load_credentials(args.credentials_file)
+    store = connect_store(args.endpoint, args.bucket, args.insecure)
     store.ensure_bucket()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     box = BoundingBox(*args.bbox)
     LOGGER.info("Bounding box cost=%s credits/request, max %.0f credits/day at configured interval",
                 box.credit_cost, box.credit_cost * 86400 / args.interval_seconds)
-    client = OpenSkyClient(client_id, client_secret)
+    client = OpenSkyClient(client_id, client_secret, anonymous=args.anonymous)
     producer = create_producer(args.bootstrap_servers)
     stop = Event()
     for signum in (signal.SIGINT, signal.SIGTERM):

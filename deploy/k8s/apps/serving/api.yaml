@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airtraffic-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: airtraffic-api}
+  template:
+    metadata:
+      labels: {app: airtraffic-api}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: api
+          image: airtraffic-serving:local
+          ports:
+            - {name: http, containerPort: 18080}
+          envFrom:
+            - configMapRef: {name: airtraffic-serving}
+          env:
+            - name: AIRTRAFFIC_MONGO_URI
+              valueFrom:
+                secretKeyRef: {name: airtraffic-serving-credentials, key: MONGO_READER_URI}
+          readinessProbe:
+            httpGet: {path: /readyz, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /livez, port: http}
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: '1', memory: 256Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: temporary, mountPath: /tmp}
+      volumes:
+        - name: temporary
+          emptyDir: {sizeLimit: 64Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: airtraffic-api
+spec:
+  selector: {app: airtraffic-api}
+  ports:
+    - {name: http, port: 18080, targetPort: http}

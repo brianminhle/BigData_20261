@@ -1,0 +1,10 @@
+# Opt-in full pipeline: starts real OpenSky polling using the local secret file.
+services:
+  collector:
+    restart: unless-stopped
+    volumes:
+      - ../../credentials.json:/run/secrets/opensky.json:ro
+    command: [--insecure, --credentials-file, /run/secrets/opensky.json]
+  stream:
+    restart: unless-stopped
+    command: [--stage, all, --output, s3a://airtraffic-states/stream-v1, --insecure]

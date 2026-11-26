@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airtraffic-publisher
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: airtraffic-publisher}
+  template:
+    metadata:
+      labels: {app: airtraffic-publisher}
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 120
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 185
+        runAsGroup: 185
+        fsGroup: 185
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: publisher
+          image: airtraffic-state-stream:local
+          workingDir: /tmp
+          command: [/opt/spark/bin/spark-submit]
+          args: [--master, 'local[2]', --conf, spark.jars.ivy=/tmp/ivy, /app/src/airtraffic/jobs/publish_serving.py, --root, $(SERVING_ROOT), --analytics-prefix, $(ANALYTICS_PREFIX)]
+          envFrom:
+            - configMapRef: {name: airtraffic-states}
+            - configMapRef: {name: airtraffic-serving}
+          env:
+            - name: AIRTRAFFIC_MONGO_URI
+              valueFrom:
+                secretKeyRef: {name: airtraffic-serving-credentials, key: MONGO_PUBLISHER_URI}
+            - name: AIRTRAFFIC_MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef: {name: airtraffic-states-credentials, key: AIRTRAFFIC_MINIO_ACCESS_KEY}
+            - name: AIRTRAFFIC_MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef: {name: airtraffic-states-credentials, key: AIRTRAFFIC_MINIO_SECRET_KEY}
+          resources:
+            requests: {cpu: '1', memory: 1Gi}
+            limits: {cpu: '2', memory: 2Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: temporary, mountPath: /tmp}
+      volumes:
+        - name: temporary
+          emptyDir: {sizeLimit: 4Gi}

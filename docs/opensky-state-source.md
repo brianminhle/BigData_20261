@@ -56,4 +56,8 @@ Empty snapshot được lưu và ghi receipt với số ACK bằng 0. Snapshot c
 PYTHONPATH=src python -m unittest discover -s tests/unit -p 'test_opensky_*.py' -v
 ```
 
-Tests dùng JSON fixture và S3/Kafka giả lập: lỗi ghi trước gửi, ACK thất bại, crash trước receipt, restart không gọi API, dedup lần thu lại, changed content, empty/malformed snapshot và checksum sai. Chưa xác nhận end-to-end bằng dịch vụ thật.
+Tests dùng JSON fixture và S3/Kafka giả lập: lỗi ghi trước gửi, ACK thất bại, crash trước receipt, restart không gọi API, dedup lần thu lại, changed content, empty/malformed snapshot và checksum sai. End-to-end local với API và dịch vụ thật đã kiểm tra; xem [kết quả](local-verification.md).
+
+## Chuẩn hóa và kiểm tra local
+
+Đã có `airtraffic-process-states` đọc snapshot MinIO và xuất observations/quality/batch windows. Xem [local runbook](../deploy/local/README.md). `airtraffic-collect-states --once --anonymous --insecure` cho phép một request public để kiểm tra; không chạy polling anonymous liên tục.

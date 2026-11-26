@@ -1,6 +1,6 @@
 # Air Traffic Analytics — kế hoạch hiện tại
 
-Cập nhật 22/11/2026. **Nguồn chính duy nhất: OpenSky state vectors.** Raw ADS-B/CPR đã rời phạm vi chính; [blueprint raw cũ](archive/raw-project-blueprint.md) được giữ làm tham khảo, không dùng để giao việc. Deploy Kubernetes được làm trên nhánh riêng theo [hướng dẫn cụm](kubernetes-setup.md).
+Cập nhật 23/11/2026. **Nguồn chính duy nhất: OpenSky state vectors.** Raw ADS-B/CPR đã rời phạm vi chính; [blueprint raw cũ](archive/raw-project-blueprint.md) được giữ làm tham khảo, không dùng để giao việc. Deploy Kubernetes được làm trên nhánh riêng theo [hướng dẫn cụm](kubernetes-setup.md).
 
 ## Bài toán
 
@@ -53,6 +53,23 @@ Có các case dữ liệu bình thường, duplicate do retry, đảo arrival or
 
 ## Trạng thái code
 
-Đã có collector OAuth2, MinIO snapshot outbox, Kafka publisher và unit tests cho failure/recovery. Chưa nghiệm thu API/MinIO/Kafka thật cho pipeline này. Spark analytics, serving và dashboard state vectors chưa có.
+| Hạng mục | Trạng thái hiện tại |
+|---|---|
+| Ingestion | OAuth, MinIO outbox và Kafka đã chạy thật một giờ: 30 snapshot mới, tổng 407 observations |
+| Chuẩn hóa/streaming | Bronze/Silver/Gold, watermark/dedup, 85 dòng Gold đã chốt; đối chiếu nguồn và batch đạt |
+| Batch nâng cao | Đã có lag/lead, đoạn chuyển động và gap, rolling density/ranking, quality pivot/unpivot và broadcast join dimension nội bộ; [chi tiết](advanced-analytics.md) |
+| Serving | MongoDB versioned publication, API read-only, dashboard poll 30 giây; publisher tự đồng bộ và batch gần nhất có lịch chạy |
+| Hiệu năng | Cache dữ liệu tái sử dụng, output partition theo ngày và physical plans; chưa benchmark phân tán |
+| Deploy | Image và runtime bundle collector/stream/Mongo/publisher/API/batch đã chuẩn bị; manifest kiểm tra schema, chưa chạy trên cụm |
+
+Batch analytics xuất run độc lập; publisher công bố movement/gaps từ run hoàn tất vào MongoDB, chưa tự sửa kết quả streaming. Không coi các đoạn quan sát là chuyến bay đã tái dựng hoàn chỉnh.
 
 Code raw replay, decoder, CPR và Compose Kafka/Spark/HDFS vẫn nằm trong repo để tham khảo và hồi quy; chạy `docker compose up` hiện khởi động runtime cũ. Không xem đó là deployment đã hoàn thành của kiến trúc mới.
+
+## Cập nhật local ngày 23/11/2026
+
+Có Compose riêng tại `deploy/local/compose.yaml`, chuẩn hóa observations, quality report và batch reference aircraft/window chạy local. Có anonymous one-shot để kiểm tra API thật; OAuth vẫn dành cho collector định kỳ. Các output hoàn tất có `_SUCCESS`, không ghi đè thư mục trước. K8s collector được chuẩn bị ở `deploy/k8s/apps/states` với CronJob suspend mặc định; chưa triển khai cụm. [Cách chạy](../deploy/local/README.md).
+
+## Serving tự động
+
+[MongoDB serving](mongodb-serving.md) đã thay đường đọc file local làm luồng chính. [Runtime bundle](../deploy/k8s/apps/runtime/README.md) mô tả điều kiện bàn giao; không đồng nghĩa đã có Spark executors phân tán hoặc Mongo HA.

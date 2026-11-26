@@ -2,13 +2,29 @@
 
 Nguồn chính là **OpenSky state vectors**, phân tích mật độ theo không gian–thời gian, hành trình quan sát được và chất lượng dữ liệu. [Blueprint hiện tại](docs/project-blueprint.md) là kế hoạch thực thi; raw ADS-B/CPR đã rời phạm vi chính.
 
+[Sơ đồ tổng thể hệ thống (draw.io)](docs/system-overview.drawio) gồm luồng state vectors hiện tại, kiến trúc đích và trang riêng cho raw replay cũ.
+
 ## Ingestion hiện tại
 
 ```text
 OpenSky API → Collector → MinIO snapshots → Kafka state vectors
 ```
 
-Snapshot được lưu trước khi phát Kafka; outbox trong MinIO cho phép gửi lại sau lỗi/restart. Có thể có duplicate khi crash sau ACK, consumer cần dedup theo observation ID. [Cấu hình và recovery](docs/opensky-state-source.md) mô tả cách chạy `airtraffic-collect-states`, bucket/topic cần có và các giới hạn. Chưa nghiệm thu API/MinIO/Kafka thật và chưa có Spark consumer state vectors.
+Snapshot được lưu trước khi phát Kafka; outbox trong MinIO cho phép gửi lại sau lỗi/restart. Có thể có duplicate khi crash sau ACK, consumer cần dedup theo observation ID. [Cấu hình và recovery](docs/opensky-state-source.md) mô tả cách chạy `airtraffic-collect-states`, bucket/topic cần có và các giới hạn. Luồng local có phép kiểm tra API/MinIO/Kafka thật; xem [kết quả kiểm tra](docs/local-verification.md). Đã có [Spark consumer state vectors](docs/state-streaming.md): Kafka → Bronze → Silver có watermark/dedup → Gold cửa sổ 5 phút, cùng checkpoint trên MinIO.
+
+## Chạy local và kiểm tra dữ liệu
+
+Không cần Kubernetes: xem [hướng dẫn local](deploy/local/README.md).
+
+```bash
+make states-up
+make states-test
+make states-check-api
+make states-report
+make states-stop
+```
+
+Lệnh API thực hiện một lần anonymous. Report nằm ở `data/state-reports/`: observations chuẩn hóa, quality JSON và batch reference số aircraft theo ô/cửa sổ. Đây là batch local, chưa triển khai Spark consumer state vectors.
 
 ## Runtime raw cũ để tham khảo
 
@@ -78,3 +94,15 @@ make test-streaming
 ```
 
 Test streaming tạo run riêng và ghi output/checkpoint vào storage đã cấu hình. Đây vẫn là kiểm tra runtime HDFS trong giai đoạn chuyển đổi; chưa xác nhận MinIO hoặc Kubernetes.
+
+## Dashboard local
+
+[Hướng dẫn truy vấn và dashboard](docs/dashboard.md): `make dashboard-export`, sau đó `make dashboard-serve` và mở http://localhost:18080. Dashboard đọc bản tổng hợp Silver/Gold; không gọi OpenSky.
+
+## Batch analytics nâng cao
+
+[Chuyển động, observation gaps, rolling density và quality analytics](docs/advanced-analytics.md). Chạy bằng `make analytics-run START=... END=... OUTPUT=...`; image dùng chung Spark, có [Job K8s để bàn giao](deploy/k8s/apps/analytics/README.md).
+
+## MongoDB serving (luồng chính)
+
+`make serving-build && make serving-up` bật publisher và dashboard tại http://localhost:18081, không gọi OpenSky. [Chi tiết](docs/mongodb-serving.md). `make runtime-build && make runtime-local-up` mới bật toàn bộ luồng có collector và batch định kỳ. [Bàn giao Kubernetes](deploy/k8s/apps/runtime/README.md). Dashboard file ở port 18080 vẫn là fallback thủ công.

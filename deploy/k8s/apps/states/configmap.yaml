@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: airtraffic-states
+data:
+  AIRTRAFFIC_MINIO_ENDPOINT: minio.airtraffic.svc.cluster.local:9000
+  AIRTRAFFIC_STATES_BUCKET: airtraffic-states
+  AIRTRAFFIC_KAFKA_BOOTSTRAP_SERVERS: kafka.airtraffic.svc.cluster.local:9092
+  AIRTRAFFIC_STATES_TOPIC: airtraffic.states.opensky.v1

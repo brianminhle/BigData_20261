@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: airtraffic-serving
+data:
+  AIRTRAFFIC_MONGO_DATABASE: airtraffic
+  SERVING_ROOT: s3a://airtraffic-states/stream-v1
+  ANALYTICS_PREFIX: s3a://airtraffic-states/analytics

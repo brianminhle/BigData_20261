@@ -45,7 +45,8 @@ class BoundingBox:
 
 
 class OpenSkyClient:
-    def __init__(self, client_id: str, client_secret: str):
+    def __init__(self, client_id: str, client_secret: str, *, anonymous=False):
+        self.anonymous = anonymous
         self.client_id = client_id
         self.client_secret = client_secret
         self.token = None
@@ -69,7 +70,7 @@ class OpenSkyClient:
                            "lomin": box.lomin, "lomax": box.lomax})
         for attempt in range(2):
             request = Request(f"{STATES_URL}?{query}",
-                              headers={"Authorization": f"Bearer {self._access_token()}"})
+                              headers={} if self.anonymous else {"Authorization": f"Bearer {self._access_token()}"})
             try:
                 with urlopen(request, timeout=30) as response:
                     result = json.load(response)
@@ -79,7 +80,7 @@ class OpenSkyClient:
                     raise ValueError("Unexpected OpenSky snapshot format")
                 return result
             except HTTPError as error:
-                if error.code == 401 and attempt == 0:
+                if error.code == 401 and attempt == 0 and not self.anonymous:
                     self.token = None
                     continue
                 if error.code == 429:

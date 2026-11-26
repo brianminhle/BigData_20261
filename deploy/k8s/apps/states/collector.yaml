@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: collect-opensky-states
+spec:
+  schedule: '*/2 * * * *'
+  suspend: true
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 60
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 110
+      template:
+        spec:
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 185
+            runAsGroup: 185
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: collector
+              image: airtraffic-states:local
+              imagePullPolicy: IfNotPresent
+              args: [--once]
+              envFrom:
+                - configMapRef:
+                    name: airtraffic-states
+                - secretRef:
+                    name: airtraffic-states-credentials
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: '1'
+                  memory: 512Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]

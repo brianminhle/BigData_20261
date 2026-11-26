@@ -1,0 +1,178 @@
+name: airtraffic-states-local
+
+x-app: &app
+  image: airtraffic-states:local
+  build:
+    context: ../..
+    dockerfile: deploy/images/states/Dockerfile
+  user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+  environment: &app-env
+    AIRTRAFFIC_MINIO_ENDPOINT: minio:9000
+    AIRTRAFFIC_MINIO_ACCESS_KEY: ${LOCAL_MINIO_USER:-local-airtraffic}
+    AIRTRAFFIC_MINIO_SECRET_KEY: ${LOCAL_MINIO_PASSWORD:-local-development-only}
+    AIRTRAFFIC_STATES_BUCKET: airtraffic-states
+    AIRTRAFFIC_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    AIRTRAFFIC_STATES_TOPIC: airtraffic.states.opensky.v1
+  mem_limit: 512m
+
+services:
+  minio:
+    # Archived distribution, pinned for local verification only; not the production choice.
+    image: bitnamilegacy/minio@sha256:451fe6858cb770cc9d0e77ba811ce287420f781c7c1b806a386f6896471a349c
+    environment:
+      MINIO_ROOT_USER: ${LOCAL_MINIO_USER:-local-airtraffic}
+      MINIO_ROOT_PASSWORD: ${LOCAL_MINIO_PASSWORD:-local-development-only}
+    volumes:
+      - minio-data:/bitnami/minio/data
+    ports:
+      - "127.0.0.1:${LOCAL_MINIO_PORT:-19000}:9000"
+      - "127.0.0.1:${LOCAL_MINIO_CONSOLE_PORT:-19001}:9001"
+    mem_limit: 768m
+
+  kafka:
+    image: apache/kafka:3.9.1@sha256:4ceccc577f03f51f6af8dbfda55194d0d892f4fa7913ffbded567ce3895622ed
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: INTERNAL://:9092,HOST://:19092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,HOST://localhost:${LOCAL_KAFKA_PORT:-19093}
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_HEAP_OPTS: -Xms256m -Xmx512m
+    ports:
+      - "127.0.0.1:${LOCAL_KAFKA_PORT:-19093}:19092"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: [CMD, /opt/kafka/bin/kafka-topics.sh, --bootstrap-server, kafka:9092, --list]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+    mem_limit: 1g
+
+  init:
+    <<: *app
+    entrypoint: [python3, -m, airtraffic.jobs.init_states_local]
+    depends_on:
+      minio: {condition: service_started}
+      kafka: {condition: service_healthy}
+
+  collector:
+    <<: *app
+    profiles: [tools]
+    environment:
+      <<: *app-env
+      AIRTRAFFIC_OPENSKY_CLIENT_ID: ${AIRTRAFFIC_OPENSKY_CLIENT_ID:-}
+      AIRTRAFFIC_OPENSKY_CLIENT_SECRET: ${AIRTRAFFIC_OPENSKY_CLIENT_SECRET:-}
+    command: [--insecure]
+    depends_on:
+      init: {condition: service_completed_successfully}
+
+  batch:
+    <<: *app
+    profiles: [tools]
+    entrypoint: [airtraffic-process-states]
+    command: [--insecure, --output, /output/latest]
+    volumes:
+      - ../../data/state-reports:/output
+    depends_on:
+      init: {condition: service_completed_successfully}
+
+  stream:
+    <<: *app
+    image: airtraffic-state-stream:local
+    build:
+      context: ../..
+      dockerfile: deploy/images/state-stream/Dockerfile
+    profiles: [tools]
+    user: "185:185"
+    mem_limit: 3g
+    command: [--stage, archive, --output, s3a://airtraffic-states/stream-v1, --insecure]
+
+  mongo:
+    image: mongo:7.0@sha256:41e8195b2791692695e1dc9bd21cd51d0a3af05fff8ace9304a5c1acf94f1ae1
+    profiles: [serving]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: local-admin
+      MONGO_INITDB_ROOT_PASSWORD: ${LOCAL_MONGO_ADMIN_PASSWORD:-local-admin-only}
+      MONGO_PUBLISHER_PASSWORD: ${LOCAL_MONGO_PUBLISHER_PASSWORD:-local-publisher-only}
+      MONGO_READER_PASSWORD: ${LOCAL_MONGO_READER_PASSWORD:-local-reader-only}
+    volumes:
+      - mongo-data:/data/db
+      - ./mongo/init.js:/docker-entrypoint-initdb.d/users.js:ro
+    healthcheck:
+      test: [CMD, mongosh, --quiet, --eval, 'quit(db.adminCommand({ping:1}).ok ? 0 : 1)']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    mem_limit: 768m
+
+  publisher:
+    <<: *app
+    image: airtraffic-state-stream:local
+    build:
+      context: ../..
+      dockerfile: deploy/images/state-stream/Dockerfile
+    profiles: [serving]
+    user: "185:185"
+    mem_limit: 2g
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+      AIRTRAFFIC_MONGO_URI: mongodb://publisher:${LOCAL_MONGO_PUBLISHER_PASSWORD:-local-publisher-only}@mongo:27017/airtraffic
+    entrypoint: [/opt/spark/bin/spark-submit, --master, 'local[2]', /app/src/airtraffic/jobs/publish_serving.py]
+    command: [--insecure]
+    depends_on:
+      mongo: {condition: service_healthy}
+      minio: {condition: service_started}
+
+  analytics-worker:
+    <<: *app
+    image: airtraffic-state-stream:local
+    profiles: [analytics]
+    user: "185:185"
+    mem_limit: 2g
+    restart: unless-stopped
+    entrypoint: [/opt/spark/bin/spark-submit, --master, 'local[2]', /app/src/airtraffic/jobs/analyze_recent_states.py]
+    command: [--insecure, --interval-seconds, '900']
+    depends_on:
+      minio: {condition: service_started}
+
+  api:
+    image: airtraffic-serving:local
+    build:
+      context: ../..
+      dockerfile: deploy/images/serving/Dockerfile
+    profiles: [serving]
+    restart: unless-stopped
+    environment:
+      AIRTRAFFIC_MONGO_URI: mongodb://reader:${LOCAL_MONGO_READER_PASSWORD:-local-reader-only}@mongo:27017/airtraffic
+    ports:
+      - "127.0.0.1:${LOCAL_DASHBOARD_PORT:-18081}:18080"
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:18080/readyz', timeout=5)"]
+      interval: 15s
+      timeout: 6s
+      retries: 10
+    read_only: true
+    tmpfs: [/tmp]
+    mem_limit: 256m
+    depends_on:
+      mongo: {condition: service_healthy}
+
+  tests:
+    <<: *app
+    profiles: [tests]
+    entrypoint: [python3, -m, unittest, discover, -s, /tests/unit, -p, 'test_opensky_*.py', -v]
+    volumes:
+      - ../../tests:/tests:ro
+
+volumes:
+  minio-data:
+  kafka-data:
+  mongo-data:

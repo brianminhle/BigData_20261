@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AirTraffic · Quan sát vùng trời</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
+<body><main>
+<header><div><span class="eyebrow">AIRTRAFFIC / OPENSKY</span><h1>Quan sát vùng trời</h1><p>Mật độ quan sát, diễn biến và chất lượng dữ liệu hàng không.</p></div><button id="refresh">Đọc lại dữ liệu</button></header>
+<div id="status" role="status">Đang đọc dữ liệu…</div>
+<section class="filters"><label>Vùng thu thập<select id="scope"></select></label><label>Khoảng thời gian<select id="range"><option value="24">24 giờ gần nhất</option><option value="6">6 giờ gần nhất</option><option value="1">1 giờ gần nhất</option></select></label><span id="freshness"></span></section>
+<section id="metrics" class="metrics"></section>
+<section class="panels"><article><div class="panel-title"><h2>Mật độ theo ô địa lý</h2><select id="window" aria-label="Cửa sổ đã chốt"></select></div><p>ICAO duy nhất / ô 1° × 1° · chỉ cửa sổ đã chốt</p><svg id="map" viewBox="0 0 560 400" role="img" aria-label="Lưới mật độ theo kinh độ và vĩ độ"></svg><p id="map-note"></p></article>
+<article><h2>Máy bay quan sát theo thời gian</h2><p>ICAO duy nhất trên toàn vùng / 5 phút · từ observations hiện có</p><svg id="chart" viewBox="0 0 560 400" role="img" aria-label="Biểu đồ số máy bay theo cửa sổ"></svg><p>Không cộng số máy bay giữa các ô. Khoảng không có observations để trống, không suy ra số máy bay bằng 0.</p></article></section>
+<section class="notes"><h2>Chuyển động và khoảng mất quan sát</h2>
+<form id="aircraft-form"><label>ICAO24 <input id="icao24" pattern="[0-9a-fA-F]{6}" maxlength="6" placeholder="Ví dụ: 888123" required></label> <button>Tra cứu máy bay</button></form>
+<p id="movement-status">Nhập ICAO24 để xem dữ liệu batch đã hoàn tất; không suy ra chuyến bay hoàn chỉnh.</p>
+<div class="table-scroll"><table><thead><tr><th>Thời điểm vị trí</th><th>Độ trễ giữa vị trí (s)</th><th>Tốc độ suy ra (m/s)</th><th>Thay đổi độ cao (m)</th><th>Khoảng trống &gt;10 phút</th></tr></thead><tbody id="movement-rows"></tbody></table></div></section>
+<section class="notes"><h2>Đọc dữ liệu đúng cách</h2><p>Đây là số máy bay được OpenSky quan sát trong vùng chọn, không phải toàn bộ máy bay thực tế. Vị trí cũ là vị trí có tuổi trên 15 giây tại thời điểm snapshot. Gold cần watermark đi qua mới chốt; phần cuối biểu đồ có thể còn thay đổi.</p><p>Dashboard tự đọc lại API mỗi 30 giây. Thời điểm dữ liệu nguồn và lần đồng bộ serving được hiển thị riêng. Lưới tọa độ không phải bản đồ địa lý nền.</p></section>
+</main></body></html>
