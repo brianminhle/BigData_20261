@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: airtraffic
+resources:
+  - ../../apps/infra
+  - ../../apps/runtime
+patches:
+  - target: {group: batch, version: v1, kind: CronJob, name: collect-opensky-states}
+    patch: |-
+      - op: add
+        path: /spec/jobTemplate/spec/template/spec/containers/0/args/-
+        value: --insecure
+  - target: {group: apps, version: v1, kind: Deployment, name: airtraffic-stream}
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/args/-
+        value: --insecure
+  - target: {group: apps, version: v1, kind: Deployment, name: airtraffic-publisher}
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/args/-
+        value: --insecure
+  - target: {group: batch, version: v1, kind: CronJob, name: airtraffic-recent-analytics}
+    patch: |-
+      - op: add
+        path: /spec/jobTemplate/spec/template/spec/containers/0/args/-
+        value: --insecure

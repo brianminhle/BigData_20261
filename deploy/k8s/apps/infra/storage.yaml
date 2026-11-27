@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: airtraffic-kafka-local
+spec:
+  capacity: {storage: 10Gi}
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: airtraffic-local-retain
+  volumeMode: Filesystem
+  local: {path: /srv/airtraffic/kafka}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - {key: kubernetes.io/hostname, operator: In, values: [airtraffic-k8s]}
+  claimRef: {namespace: airtraffic, name: kafka-data}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kafka-data
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: airtraffic-local-retain
+  volumeName: airtraffic-kafka-local
+  resources:
+    requests: {storage: 10Gi}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: airtraffic-minio-local
+spec:
+  capacity: {storage: 20Gi}
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: airtraffic-local-retain
+  volumeMode: Filesystem
+  local: {path: /srv/airtraffic/minio}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - {key: kubernetes.io/hostname, operator: In, values: [airtraffic-k8s]}
+  claimRef: {namespace: airtraffic, name: minio-data}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-data
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: airtraffic-local-retain
+  volumeName: airtraffic-minio-local
+  resources:
+    requests: {storage: 20Gi}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: airtraffic-mongo-local
+spec:
+  capacity: {storage: 10Gi}
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: airtraffic-local-retain
+  volumeMode: Filesystem
+  local: {path: /srv/airtraffic/mongo}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - {key: kubernetes.io/hostname, operator: In, values: [airtraffic-k8s]}
+  claimRef: {namespace: airtraffic, name: database-mongo-0}

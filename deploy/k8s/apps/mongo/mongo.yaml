@@ -48,5 +48,6 @@ spec:
     - metadata: {name: database}
       spec:
         accessModes: [ReadWriteOnce]
+        storageClassName: airtraffic-local-retain
         resources:
           requests: {storage: 10Gi}

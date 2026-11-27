@@ -4,7 +4,7 @@ metadata:
   name: airtraffic-recent-analytics
 spec:
   schedule: '*/15 * * * *'
-  suspend: true
+  suspend: false
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 2

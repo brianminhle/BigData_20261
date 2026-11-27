@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+spec:
+  selector: {app: airtraffic-minio}
+  ports:
+    - {name: s3, port: 9000, targetPort: 9000}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airtraffic-minio
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: airtraffic-minio}
+  template:
+    metadata:
+      labels: {app: airtraffic-minio}
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 120
+      containers:
+        - name: minio
+          image: bitnamilegacy/minio@sha256:451fe6858cb770cc9d0e77ba811ce287420f781c7c1b806a386f6896471a349c
+          ports:
+            - {name: s3, containerPort: 9000}
+            - {name: console, containerPort: 9001}
+          envFrom:
+            - secretRef: {name: airtraffic-minio-root}
+          startupProbe:
+            httpGet: {path: /minio/health/live, port: s3}
+            periodSeconds: 10
+            failureThreshold: 24
+          readinessProbe:
+            httpGet: {path: /minio/health/ready, port: s3}
+            periodSeconds: 15
+          resources:
+            requests: {cpu: 100m, memory: 512Mi}
+            limits: {cpu: '1', memory: 1Gi}
+          volumeMounts:
+            - {name: data, mountPath: /bitnami/minio/data}
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: minio-data}

@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: airtraffic-bucket-init
+spec:
+  backoffLimit: 6
+  template:
+    spec:
+      automountServiceAccountToken: false
+      restartPolicy: OnFailure
+      containers:
+        - name: bucket-init
+          image: airtraffic-states:local
+          imagePullPolicy: IfNotPresent
+          command: [python3, -m, airtraffic.jobs.init_states_local]
+          envFrom:
+            - configMapRef: {name: airtraffic-states}
+          env:
+            - name: AIRTRAFFIC_MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef: {name: airtraffic-states-credentials, key: AIRTRAFFIC_MINIO_ACCESS_KEY}
+            - name: AIRTRAFFIC_MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef: {name: airtraffic-states-credentials, key: AIRTRAFFIC_MINIO_SECRET_KEY}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 512Mi}
