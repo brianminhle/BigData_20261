@@ -1,6 +1,10 @@
 # Chuẩn bị Kubernetes
 
-Toàn bộ cấu hình K8s nằm ở đây, dùng **kubeadm**. Chưa triển khai ứng dụng lên cụm.
+Toàn bộ cấu hình K8s nằm ở đây, dùng **kubeadm**. Cụm Ubuntu Hyper-V một node đã
+triển khai ứng dụng; xem [hồ sơ vận hành](../../docs/kubernetes-operations-2026-11-26.md).
+Overlay `overlays/pc` dùng batch local; `overlays/batch-distributed` chạy batch
+với driver và hai executor pod. Xem [hướng dẫn batch phân tán](overlays/batch-distributed/README.md)
+để triển khai, nghiệm thu và rollback.
 
 ```text
 k8s/

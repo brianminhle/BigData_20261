@@ -1,0 +1,51 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: airtraffic-recent-analytics
+spec:
+  # Enable only after the frozen-input local/distributed comparison passes.
+  suspend: true
+  startingDeadlineSeconds: 120
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 900
+      template:
+        metadata:
+          labels:
+            app: airtraffic-batch-driver
+        spec:
+          serviceAccountName: spark-batch-driver
+          automountServiceAccountToken: true
+          containers:
+            - name: analytics
+              args:
+                - --properties-file
+                - /etc/spark-batch/spark.properties
+                - --conf
+                - spark.driver.host=$(POD_IP)
+                - --conf
+                - spark.kubernetes.driver.pod.name=$(POD_NAME)
+                - /app/src/airtraffic/jobs/analyze_recent_states.py
+                - --root
+                - $(SERVING_ROOT)
+                - --output-prefix
+                - $(ANALYTICS_PREFIX)
+                - --insecure
+              env:
+                - name: POD_IP
+                  valueFrom:
+                    fieldRef: {fieldPath: status.podIP}
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef: {fieldPath: metadata.name}
+              resources:
+                requests: {cpu: 500m, memory: 1536Mi}
+                limits: {cpu: '1', memory: 1536Mi}
+              volumeMounts:
+                - name: spark-batch
+                  mountPath: /etc/spark-batch
+                  readOnly: true
+          volumes:
+            - name: spark-batch
+              configMap:
+                name: airtraffic-spark-batch

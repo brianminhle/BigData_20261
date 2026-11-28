@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: airtraffic
+resources:
+  - ../pc
+  - rbac.yaml
+configMapGenerator:
+  - name: airtraffic-spark-batch
+    files:
+      - spark.properties
+      - executor.yaml
+patches:
+  - path: driver.yaml

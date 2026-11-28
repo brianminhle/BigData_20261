@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: airtraffic-batch-executor
+spec:
+  serviceAccountName: spark-batch-executor
+  automountServiceAccountToken: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 185
+    runAsGroup: 185
+    fsGroup: 185
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: executor
+      # The application image overrides ENTRYPOINT for local streaming.
+      # Restore Spark's executor entrypoint explicitly for these pods.
+      command: [/opt/entrypoint.sh]
+      workingDir: /tmp
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: [ALL]
+      volumeMounts:
+        - name: spark-local-dir-1
+          mountPath: /tmp
+  volumes:
+    - name: spark-local-dir-1
+      emptyDir:
+        sizeLimit: 2Gi

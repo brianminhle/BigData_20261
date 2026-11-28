@@ -2,6 +2,11 @@
 
 Bundle gồm collector, stream, MongoDB, publisher, API/dashboard và CronJob batch gần nhất. Không tạo cluster, Kafka hoặc MinIO. Cần namespace `airtraffic`, DNS/service cho Kafka/MinIO, bucket/topic và storage class/PV từ nhánh hạ tầng. MongoDB ở đây là **một node có PVC**, không phải replica set HA. Spark stream/publisher chạy `local[2]` trong pod; đây là deployment ứng dụng trên K8s, chưa phải Spark executors phân tán.
 
+Riêng batch có [overlay driver/executor](../../overlays/batch-distributed/README.md)
+và script nghiệm thu trên dữ liệu thật. Overlay đó thay CronJob batch; stream và
+publisher vẫn chạy local. Hồ sơ cụm thật nằm trong
+[tài liệu vận hành](../../../../docs/kubernetes-operations-2026-11-26.md).
+
 ## Chuẩn bị một lần
 
 1. `make runtime-build`; tag/push ba image `airtraffic-states:local`, `airtraffic-state-stream:local`, `airtraffic-serving:local` tới registry của cụm hoặc load vào node. Dùng overlay Kustomize `images` để thay bằng tag/digest đã phát hành.
@@ -21,7 +26,9 @@ Mongo init script chỉ chạy khi volume trống. Đổi Secret không tự đ�
 
 ## Kích hoạt và nghiệm thu
 
-Collector và batch CronJob mặc định suspend để tránh gọi API trước khi cấu hình xong. Sau khi kiểm tra images, Secrets, endpoint và quyền bucket/topic:
+Collector và batch trong base hiện có `suspend: false`. Khi triển khai mới, đặt
+`suspend: true` trước khi apply để tránh chạy khi cấu hình chưa xong. Sau khi kiểm
+tra images, Secrets, endpoint và quyền bucket/topic, bật lịch bằng:
 
 ```bash
 kubectl -n airtraffic patch cronjob collect-opensky-states --type=merge -p '{"spec":{"suspend":false}}'
@@ -45,4 +52,7 @@ Luồng tự động: collector mỗi 2 phút → streaming trigger 30 giây →
 
 ## Phạm vi đã/ chưa kiểm chứng
 
-Đã kiểm tra local trên dịch vụ Mongo/MinIO thật, quyền read-only, ghi dở/retry, API và trình duyệt; manifest render/schema được kiểm tra. Chưa apply lên Kubernetes thật, chưa chứng minh PVC/DNS/TLS trên cụm, HA hoặc tải lớn. Cần nghiệm thu các mục này ở nhánh deploy, không coi manifest hợp lệ là cụm đã vận hành.
+Đã kiểm tra local trên dịch vụ Mongo/MinIO thật, quyền read-only, ghi dở/retry,
+API và trình duyệt. Cụm một node đã nghiệm thu DNS, PVC, pipeline và reboot VM;
+xem hồ sơ vận hành để biết bằng chứng và giới hạn. Chưa chứng minh HA, TLS cho
+MinIO, phục hồi sang ổ đĩa khác hoặc hiệu năng tải lớn.

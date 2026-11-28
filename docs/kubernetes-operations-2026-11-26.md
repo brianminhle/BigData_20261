@@ -2,13 +2,35 @@
 
 This document records deployment on 2026-11-26 and recovery checks on 2026-11-27. It does not claim multi-host availability or physical data replication.
 
+## Distributed batch update — 2026-11-27
+
+The live recent-analytics CronJob now runs a Spark driver with two Kubernetes
+executor pods using `deploy/k8s/overlays/batch-distributed`. It is enabled every
+15 minutes with `Forbid`; driver/executor requests total 1.5 CPUs and 3840 MiB
+memory. Streaming and publisher still use `local[2]`. API, MongoDB and dashboard
+configuration was preserved.
+
+Frozen-input acceptance passed on 4,949 real observations: all six output
+tables matched the local run, and event logs showed 22/45 successful tasks on
+the two executors. A separate Job from the real CronJob completed on 4,956
+observations; publisher exposed its new run through the ready API. Executors
+were removed after completion and application PVCs stayed Bound. See
+[full evidence](spark-batch-acceptance-2026-11-27.md) and the
+[deployment/rollback guide](../deploy/k8s/overlays/batch-distributed/README.md).
+
+The new overlay intentionally starts suspended; applying it again requires
+resuming the CronJob after validation. Applying the old `overlays/pc` restores
+the local batch template, so select the overlay deliberately. The private
+pre-migration CronJob backup is `deploy/k8s/local/batch-before-distributed.json`.
+This remains a single-VM cluster, not a multi-machine or HA deployment.
+
 ## Platform and access
 
 - Host: Windows 11 Pro, Intel i5-12600K, 32 GiB RAM, Lexar NM790 SSD.
 - VM: `airtraffic-k8s`, Ubuntu 24.04 LTS, 6 vCPU, 12 GiB RAM, 60 GiB dynamic VHDX at `D:\VMs\AirTraffic-K8s\airtraffic-k8s.vhdx`. Hyper-V starts it automatically and requests a guest shutdown when Windows shuts down.
 - Kubernetes: kubeadm/kubelet/kubectl `1.37.2-1.1`, containerd `2.2.1`, Flannel `v0.28.10`. The applied Flannel manifest has SHA-256 `393BDBCE53EB50C8EB97DD513B218518B7D6E7985DC7B889BE956E112A711084`.
 - API endpoint: `172.23.47.137:6443` via Hyper-V Default Switch. After the first guest reboot changed its DHCP address and stopped kubeadm/etcd from binding, `/etc/netplan/99-airtraffic-k8s.yaml` was added in Ubuntu to retain `172.23.47.137/20` alongside DHCP. A second guest reboot verified that the control plane recovers without manual address repair. The Default Switch subnet itself can still change after Windows restarts; the attempted dedicated management switch was canceled at UAC. This is not a stable multi-host endpoint.
-- Tailscale v1.104.7 was installed on the Ubuntu VM on 2026-11-27 and `tailscaled` is active. Device authentication is pending; the VM has no Tailscale IP yet. Tailscale is installed on Windows but its client was in `NoState` at inspection. Kubernetes still advertises `172.23.47.137`; joining a remote worker requires a planned control-plane and Flannel network migration after both devices have joined the same tailnet.
+- Tailscale v1.104.7 is authenticated on Ubuntu: VM IP `100.99.10.21`; Windows IP `100.93.151.127`. SSH and Kubernetes API access from Windows through the VM's Tailscale IP passed on 2026-11-27. `tailscaled` is enabled at boot. Kubernetes still advertises `172.23.47.137`; this management connection does not migrate node/Flannel traffic or add a worker. Windows reboot recovery remains untested.
 - Windows management client: `deploy/k8s/local/bin/kubectl.exe` v1.37.2, verified against the official SHA-256 file. Kubeconfig: ignored file `deploy/k8s/local/admin.conf`, context `airtraffic-kubeadm`. This kubeconfig is cluster-admin material; keep it private.
 
 Use both kubeconfig and context for every cluster mutation:
@@ -19,6 +41,47 @@ $cfg = 'deploy/k8s/local/admin.conf'
 & $kc --kubeconfig $cfg --context airtraffic-kubeadm get nodes
 & $kc --kubeconfig $cfg --context airtraffic-kubeadm -n airtraffic get pods,pvc
 ```
+
+For management over Tailscale, use the separate private kubeconfig:
+
+```powershell
+$kc = '.\deploy\k8s\local\bin\kubectl.exe'
+$cfg = 'deploy/k8s/local/admin-tailscale.conf'
+& $kc --kubeconfig $cfg --context airtraffic-tailscale get nodes
+& $kc --kubeconfig $cfg --context airtraffic-tailscale -n airtraffic get pods
+& $kc --kubeconfig $cfg --context airtraffic-tailscale -n headlamp port-forward service/headlamp 18082:80 --address 127.0.0.1
+```
+
+This kubeconfig uses `server: https://100.99.10.21:6443` and
+`tls-server-name: airtraffic-k8s`, a DNS SAN already present in the API server
+certificate. CA and client-certificate verification remain enabled; no insecure
+TLS bypass or API-server certificate rotation was needed. It contains the same
+cluster-admin credential as the original kubeconfig and remains Git-ignored.
+Other tailnet clients also need authorized Kubernetes credentials and tailnet
+network access; joining Tailscale alone grants no Kubernetes identity. Only
+Windows-to-VM management access was tested here, not a separate remote client.
+
+SSH from this Windows host can reuse its already verified VM host key:
+
+```powershell
+ssh -i "$HOME\.ssh\airtraffic-k8s" -o HostKeyAlias=172.23.47.137 airtraffic@100.99.10.21
+```
+
+Via the Tailscale kubeconfig, the node was Ready, the five application
+Deployments and Mongo StatefulSet were ready, and API `/readyz` returned `ok`.
+The underlying kubeadm/etcd address still depends on the guest retaining its
+configured internal IP; Tailscale management does not by itself fix that
+dependency if the Hyper-V Default Switch subnet changes after a Windows reboot.
+
+On 2026-11-28, Windows and the VM were observed after a long sleep. The VM's
+Tailscale log reported a 7h48m clock jump; the batch CronJob's last successful
+run was at 2026-11-27 16:30 UTC, while its schedule remained enabled. The
+collector resumed after wake, and the API/control plane were ready. Batch has
+`startingDeadlineSeconds: 120`, so scheduled times missed during a long sleep
+are skipped instead of replayed all at once. Keep Windows awake when continuous
+collection and analytics are required. A later scheduled batch Job,
+`airtraffic-recent-analytics-29930835`, completed successfully at
+2026-11-28 07:16:24 UTC; the CronJob remained enabled.
 
 `deploy/k8s/cluster/bootstrap-ubuntu-24.04.sh` records host prerequisites and pinned package installation. `deploy/k8s/overlays/pc` combines the application runtime with single-node Kafka/MinIO and HTTP MinIO settings. App images were built from commit `2a07ce3` inside the VM and imported into containerd as local tags; future worker nodes need a registry or image import. The MinIO image is a pinned archived community distribution used only inside this local cluster. Plan a maintained build before exposing services or depending on long-term security updates.
 
